@@ -1,1 +1,480 @@
-/* Aquí el contenido de tu archivo styles.css */
+/* =========================================================
+   1. VARIABLES DE COLOR
+   =========================================================
+   :root es "la raíz del documento" 
+   Las variables se pueden usar en CUALQUIER parte del CSS con var(--nombre).
+   ========================================================= */
+:root {
+  --color-fondo: #f6f7f9;
+  --color-superficie: #ffffff; /* fondo de las tarjetas */
+  --color-texto: #111827; /* casi negro, más suave que #000 */
+  --color-texto-suave: #6b7280; /* gris para textos secundarios */
+  --color-borde: #e5e7eb;
+  --color-primario: #2563eb; /* azul de la marca */
+  --color-primario-oscuro: #1d4ed8; /* el mismo azul, para el :hover */
+
+  --radio: 12px; /* redondeo de esquinas */
+  --sombra: 0 1px 3px rgb(0 0 0 / 0.08); /* sombra suave */
+  --ancho-maximo: 1100px; /* hasta dónde crece el contenido */
+}
+
+/* =========================================================
+   2. RESET BÁSICO
+   =========================================================
+   Cada navegador trae sus propios márgenes por defecto.
+   Para que todo se vea igual en todos, los quitamos primero.
+   ========================================================= */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  /*
+    system-ui usa la tipografía propia del sistema operativo
+    (San Francisco en Mac, Segoe en Windows...). Carga instantánea
+    porque no hay que descargar ninguna fuente.
+    Las de detrás son "por si acaso" (fallbacks).
+  */
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
+  line-height: 1.6; /* separación entre líneas: hace el texto más legible */
+  /* Suaviza el dibujado de las letras en Mac */
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Las imágenes nunca deben desbordar su contenedor */
+img {
+  max-width: 100%;
+  display: block; /* quita el hueco blanco raro debajo de las imágenes */
+}
+
+/* Quito el subrayado por defecto de los enlaces y heredo el color */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Los botones e inputs NO heredan la fuente por defecto*/
+button,
+input,
+select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* Quito los puntitos de las listas */
+ul {
+  list-style: none;
+}
+
+/* =========================================================
+   3. UTILIDAD: TEXTO SOLO PARA LECTORES DE PANTALLA
+   =========================================================
+   Esta clase esconde un elemento a la vista PERO lo deja accesible para los lectores de pantalla de personas ciegas.
+   para los <label> de los inputs.
+
+   Ojo:  display:none y visibility:hidden lo esconden también para el lector de pantalla.
+   ========================================================= */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%); /* recorta todo lo visible */
+  white-space: nowrap;
+}
+
+/* =========================================================
+   4. CABECERA (header)
+   ========================================================= */
+.site-header {
+  /*
+    display:flex - alinear cosas horizontalmente.
+  */
+  display: flex;
+  align-items: center; /* los centra verticalmente entre ellos */
+  justify-content: space-between; /* reparte el espacio sobrante: logo a la izq, avatar a la der */
+  gap: 1rem; /* separación mínima entre los hijos */
+
+  padding: 1rem 1.5rem;
+  background-color: var(--color-superficie);
+  border-bottom: 1px solid var(--color-borde);
+
+  /* El header se queda pegado arriba al hacer scroll */
+  position: sticky;
+  top: 0;
+  z-index: 10; /* para que quede POR ENCIMA del contenido al scrollear */
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; /* separación entre el icono y la palabra "DevJobs" */
+  font-weight: 700; /* negrita */
+  font-size: 1.2rem;
+  color: var(--color-primario);
+}
+
+.site-nav {
+  display: flex;
+  gap: 1.5rem;
+  color: var(--color-texto-suave);
+}
+
+/* :hover = cuando el ratón pasa por encima */
+.site-nav a:hover {
+  color: var(--color-primario);
+}
+
+/*
+  [aria-current='page'] selecciona el enlace que TIENE ese atributo.
+  Así marco la página activa sin necesidad de una clase extra.
+*/
+.site-nav a[aria-current="page"] {
+  color: var(--color-primario);
+  font-weight: 600;
+}
+
+.avatar-link img {
+  border-radius: 50%; /* 50% de redondeo = círculo perfecto */
+}
+
+/* =========================================================
+   5. SECCIÓN HERO (solo en index.html)
+   ========================================================= */
+.hero {
+  /*
+    Varios fondos en una sola propiedad, separados por comas.
+    El PRIMERO va encima del segundo.
+    linear-gradient con rgb(0 0 0 / 0.55) = capa negra semitransparente,
+    para que el texto blanco se lea bien sobre la foto.
+  */
+  background-image: linear-gradient(rgb(0 0 0 / 0.55), rgb(0 0 0 / 0.55)),
+    url("./background.webp");
+  background-size: cover; /* la imagen cubre todo el bloque sin deformarse */
+  background-position: center;
+
+  color: white;
+  text-align: center;
+  padding: 5rem 1.5rem;
+}
+
+.hero h1 {
+  /*
+    clamp(mínimo, ideal, máximo) = tamaño de letra RESPONSIVE
+    sin necesidad de media queries.
+    - En móvil nunca baja de 1.8rem
+    - Crece con el ancho de la pantalla (5vw = 5% del ancho)
+    - En pantalla grande nunca pasa de 3rem
+  */
+  font-size: clamp(1.8rem, 5vw, 3rem);
+  margin-bottom: 0.5rem;
+}
+
+.hero p {
+  margin-bottom: 2rem;
+  opacity: 0.9; /* un pelín transparente = se ve secundario */
+}
+
+.hero-form {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+
+  /* margin: 0 auto centra un bloque que tiene un ancho máximo */
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* =========================================================
+   6. BARRA DE BÚSQUEDA Y FILTROS
+   ========================================================= */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  padding: 0.6rem 1rem;
+  color: var(--color-texto-suave); /* este color lo hereda el icono SVG */
+
+  /* flex:1 = "ocupa todo el espacio libre que haya". */
+  flex: 1;
+  min-width: 260px; 
+}
+
+.search-bar input {
+  /* El input hereda el estilo del contenedor, no necesita el suyo */
+  border: none;
+  outline: none; /* quito el borde azul feo del navegador... */
+  background: transparent;
+  color: var(--color-texto);
+  width: 100%;
+}
+
+/* ...pero lo devuelvo de forma bonita cuando se navega con teclado.
+   :focus-within = "cuando algo DENTRO de mí tiene el foco" */
+.search-bar:focus-within {
+  border-color: var(--color-primario);
+  box-shadow: 0 0 0 3px rgb(37 99 235 / 0.15);
+}
+
+.search-filters {
+  display: flex;
+  flex-wrap: wrap; /* en móvil los selects se apilan solos */
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1rem;
+  width: 100%;
+}
+
+.search-filters select {
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  flex: 1 1 180px;
+  max-width: 260px;
+}
+
+/* =========================================================
+   7. BOTONES
+   ========================================================= */
+.button-primary {
+  background: var(--color-primario);
+  color: white;
+  border: none;
+  border-radius: var(--radio);
+  padding: 0.7rem 1.75rem;
+  font-weight: 600;
+  cursor: pointer; /* la manita: indica que se puede pulsar */
+  transition: background-color 0.2s;
+}
+
+.button-primary:hover {
+  background: var(--color-primario-oscuro);
+}
+
+.button-apply-job {
+  background: var(--color-primario);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  /* flex-shrink: 0 evita que el botón se aplaste cuando el texto*/
+  flex-shrink: 0;
+  transition: background-color 0.2s;
+}
+
+.button-apply-job:hover {
+  background: var(--color-primario-oscuro);
+}
+
+/* =========================================================
+   8. CATEGORÍAS (solo en index.html)
+   ========================================================= */
+.categories {
+  max-width: var(--ancho-maximo);
+  margin: 3rem auto; /* 3rem arriba/abajo, auto a los lados = centrado */
+  padding: 0 1.5rem;
+}
+
+.categories h2 {
+  margin-bottom: 1.5rem;
+}
+
+.categories-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.categories-list a {
+  display: block;
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  padding: 1.25rem;
+  box-shadow: var(--sombra);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.categories-list a:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 16px rgb(0 0 0 / 0.1);
+}
+
+.categories-list p {
+  color: var(--color-texto-suave);
+  font-size: 0.9rem;
+}
+
+/* =========================================================
+   9. BUSCADOR DE LA PÁGINA DE EMPLEOS
+   ========================================================= */
+.jobs-search {
+  max-width: var(--ancho-maximo);
+  margin: 2.5rem auto 1rem;
+  padding: 0 1.5rem;
+  text-align: center;
+}
+
+.jobs-search h1 {
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+}
+
+.jobs-search p {
+  color: var(--color-texto-suave);
+  margin-bottom: 1.5rem;
+}
+
+/* El > selecciona SOLO los hijos directos, no los nietos */
+.jobs-search form {
+  display: flex;
+  flex-direction: column; /* el buscador arriba, los filtros abajo */
+  align-items: center;
+}
+
+/* =========================================================
+   10. RESULTADOS DE BÚSQUEDA
+   ========================================================= */
+.jobs-result {
+  max-width: var(--ancho-maximo);
+  margin: 2rem auto 4rem;
+  padding: 0 1.5rem;
+}
+
+.jobs-result h2 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.jobs-listings {
+  display: flex;
+  flex-direction: column; /* las tarjetas una debajo de otra */
+  gap: 1rem;
+}
+
+.job-listing-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* texto a la izquierda, botón a la derecha */
+  gap: 1.5rem;
+
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  padding: 1.25rem 1.5rem;
+  box-shadow: var(--sombra);
+}
+
+.job-listing-card h3 {
+  font-size: 1.1rem;
+}
+
+.job-listing-card small {
+  display: block; /* para que ocupe su propia línea */
+  color: var(--color-primario);
+  margin-bottom: 0.4rem;
+}
+
+.job-listing-card p {
+  color: var(--color-texto-suave);
+  font-size: 0.95rem;
+}
+
+/* =========================================================
+   11. PAGINACIÓN
+   ========================================================= */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 2.5rem;
+}
+
+.pagination a {
+  /* inline-flex + width/height fijos = cuadraditos perfectos y centrados */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+
+  border-radius: 8px;
+  color: var(--color-texto-suave);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.pagination a:hover {
+  background: var(--color-borde);
+  color: var(--color-texto);
+}
+
+/* La página en la que estamos: fondo azul y texto blanco */
+.pagination a.is-active {
+  background: var(--color-primario);
+  color: white;
+  font-weight: 600;
+}
+
+/* =========================================================
+   12. PIE DE PÁGINA
+   ========================================================= */
+.site-footer {
+  text-align: center;
+  padding: 2rem 1.5rem;
+  background: var(--color-superficie);
+  border-top: 1px solid var(--color-borde);
+  color: var(--color-texto-suave);
+}
+
+/* =========================================================
+   13. RESPONSIVE (MEDIA QUERIES)
+   =========================================================
+
+/* --- Tablets y móviles grandes (hasta 768px de ancho) --- */
+@media (max-width: 768px) {
+  .job-listing-card {
+    flex-direction: column;
+    align-items: flex-start; /* pegados a la izquierda, no centrados */
+  }
+
+  .button-apply-job {
+    width: 100%; /* el botón ocupa todo el ancho: más fácil de tocar con el dedo */
+  }
+
+  .hero {
+    padding: 3rem 1rem; /* menos espacio interior para aprovechar la pantalla */
+  }
+}
+
+/* --- Móviles pequeños (hasta 480px) --- */
+@media (max-width: 480px) {
+  .site-header {
+    /* En pantallas muy estrechas el header se apila en 2 filas */
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+  }
+
+  .search-filters select {
+    /* Cada filtro ocupa una línea entera: se ven mucho mejor */
+    max-width: 100%;
+    flex-basis: 100%;
+  }
+}
