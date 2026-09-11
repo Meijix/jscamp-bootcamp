@@ -1,1 +1,196 @@
-<!-- Aquí el contenido de tu página index.html -->
+<!doctype html>
+<!--
+  doctype le dice al navegador "esto es HTML5".
+  Va siempre en la primera línea del archivo.
+-->
+<html lang="es">
+  <head>
+    <!--
+      El <head> es la parte que NO se ve en pantalla.
+      Aquí va la información sobre la página (metadatos).
+    -->
+
+    <!-- charset UTF-8 para que se vean bien las tildes y la ñ -->
+    <meta charset="UTF-8" />
+
+    <!--
+      Esta línea es la MÁS importante para el responsive.
+      Sin ella el móvil hace zoom out y la página se ve diminuta.
+      width=device-width -> el ancho de la página = ancho real del móvil.
+    -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- La descripción es la que sale en Google debajo del título -->
+    <meta
+      name="description"
+      content="DevJobs: encuentra tu próximo trabajo en el sector tecnológico."
+    />
+
+    <!-- El título es lo que se ve en la pestaña del navegador -->
+    <title>DevJobs - Inicio</title>
+
+    <!-- Enlazamos nuestra hoja de estilos. Los dos archivos HTML usan la MISMA. -->
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+
+  <body>
+    <!--
+      A partir de aquí va todo lo que SÍ se ve.
+      Uso etiquetas semánticas (header, main, section, footer) en vez de
+      divs sueltos, porque describen el significado de cada zona y
+      ayudan al SEO y a los lectores de pantalla.
+    -->
+
+    <header class="site-header">
+      <!-- El logo: un enlace que lleva a la home (esta misma página) -->
+      <a class="logo" href="./index.html">
+        <!--
+          El icono lo pongo como SVG inline (dentro del HTML) para
+          no tener que descargar otro archivo extra.
+          fill="none" + stroke="currentColor" = dibuja solo el contorno
+          y usa el color del texto que tenga alrededor.
+        -->
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <polyline points="16 18 22 12 16 6"></polyline>
+          <polyline points="8 6 2 12 8 18"></polyline>
+        </svg>
+        DevJobs
+      </a>
+
+      <!-- <nav> = zona de navegación principal -->
+      <nav class="site-nav">
+        <!--
+          AQUÍ ESTÁ LA NAVEGACIÓN QUE PIDE EL EJERCICIO:
+          este enlace lleva de index.html a empleos.html.
+          Uso una ruta relativa "./empleos.html" porque los dos archivos
+          están en la misma carpeta.
+        -->
+        <a href="./empleos.html">Empleos</a>
+        <a href="./index.html">Inicio</a>
+      </nav>
+
+      <!-- Enlace al perfil del usuario (todavía no hace nada, por eso href="#") -->
+      <a href="#" class="avatar-link" aria-label="Ir a mi perfil" title="Mi perfil">
+        <img
+          src="https://unavatar.io/github/mdo"
+          alt="Avatar del usuario"
+          width="32"
+          height="32"
+        />
+      </a>
+    </header>
+
+    <!-- <main> = el contenido principal y único de la página -->
+    <main>
+      <!--
+        Sección "hero": el bloque grande de bienvenida con la imagen de fondo.
+        La imagen de fondo la pongo desde el CSS, no con <img>,
+        porque es decorativa (no aporta información).
+      -->
+      <section class="hero">
+        <!-- Solo debe haber UN <h1> por página: es el título principal -->
+        <h1>Encuentra tu próximo trabajo</h1>
+        <p>Explora miles de oportunidades en el sector tecnológico.</p>
+
+        <!--
+          El formulario de búsqueda.
+          role="search" le dice a los lectores de pantalla que esto es un buscador.
+          action="./empleos.html" -> al pulsar "Buscar" el navegador nos lleva
+          a la página de resultados. Así cumplo "navegación entre archivos"
+          SIN usar nada de JavaScript.
+          method="get" -> los datos viajan en la URL (?search=react), que es
+          lo correcto para una búsqueda.
+        -->
+        <form class="hero-form" role="search" action="./empleos.html" method="get">
+          <div class="search-bar">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="M21 21l-6 -6"></path>
+            </svg>
+
+            <!--
+              El <label> es obligatorio para accesibilidad, pero en el diseño
+              no se ve. Lo escondo con la clase .visually-hidden (ver CSS):
+              se oculta a la vista pero el lector de pantalla SÍ lo lee.
+              El "for" del label debe coincidir con el "id" del input.
+            -->
+            <label class="visually-hidden" for="home-search-input">Buscar empleos</label>
+            <input
+              id="home-search-input"
+              name="search"
+              type="search"
+              placeholder="Buscar trabajos, empresas o habilidades"
+            />
+          </div>
+
+          <!--
+            type="submit" hace que este botón envíe el formulario.
+            Como el action es empleos.html, nos lleva a los resultados.
+          -->
+          <button type="submit" class="button-primary">Buscar</button>
+        </form>
+      </section>
+
+      <!-- Sección de categorías populares: solo decorativa/informativa -->
+      <section class="categories">
+        <h2>Categorías populares</h2>
+
+        <!--
+          Uso una lista <ul> porque son varios elementos del mismo tipo.
+          En el CSS le quito los puntitos y la pongo en rejilla (grid).
+        -->
+        <ul class="categories-list">
+          <li>
+            <a href="./empleos.html">
+              <h3>Frontend</h3>
+              <p>React, Vue, Angular</p>
+            </a>
+          </li>
+          <li>
+            <a href="./empleos.html">
+              <h3>Backend</h3>
+              <p>Node.js, Python, Java</p>
+            </a>
+          </li>
+          <li>
+            <a href="./empleos.html">
+              <h3>Móvil</h3>
+              <p>Swift, Kotlin, Flutter</p>
+            </a>
+          </li>
+          <li>
+            <a href="./empleos.html">
+              <h3>Datos</h3>
+              <p>SQL, Python, R</p>
+            </a>
+          </li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <!-- &copy; es la entidad HTML del símbolo © -->
+      <small>&copy; 2025 DevJobs. Todos los derechos reservados.</small>
+    </footer>
+  </body>
+</html>
