@@ -13,11 +13,7 @@
     <!-- charset UTF-8 para que se vean bien las tildes y la ñ -->
     <meta charset="UTF-8" />
 
-    <!--
-      Esta línea es la MÁS importante para el responsive.
-      Sin ella el móvil hace zoom out y la página se ve diminuta.
-      width=device-width -> el ancho de la página = ancho real del móvil.
-    -->
+    <!-- width=device-width -> el ancho de la página = ancho real del móvil.-->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!-- La descripción es la que sale en Google debajo del título -->
@@ -34,22 +30,11 @@
   </head>
 
   <body>
-    <!--
-      A partir de aquí va todo lo que SÍ se ve.
-      Uso etiquetas semánticas (header, main, section, footer) en vez de
-      divs sueltos, porque describen el significado de cada zona y
-      ayudan al SEO y a los lectores de pantalla.
-    -->
 
     <header class="site-header">
       <!-- El logo: un enlace que lleva a la home (esta misma página) -->
       <a class="logo" href="./index.html">
-        <!--
-          El icono lo pongo como SVG inline (dentro del HTML) para
-          no tener que descargar otro archivo extra.
-          fill="none" + stroke="currentColor" = dibuja solo el contorno
-          y usa el color del texto que tenga alrededor.
-        -->
+
         <svg
           width="24"
           height="24"
@@ -69,12 +54,7 @@
 
       <!-- <nav> = zona de navegación principal -->
       <nav class="site-nav">
-        <!--
-          AQUÍ ESTÁ LA NAVEGACIÓN QUE PIDE EL EJERCICIO:
-          este enlace lleva de index.html a empleos.html.
-          Uso una ruta relativa "./empleos.html" porque los dos archivos
-          están en la misma carpeta.
-        -->
+        <!-- ruta relativa "./empleos.html" porque los dos archivos están en la misma carpeta. -->
         <a href="./empleos.html">Empleos</a>
         <a href="./index.html">Inicio</a>
       </nav>
@@ -90,13 +70,7 @@
       </a>
     </header>
 
-    <!-- <main> = el contenido principal y único de la página -->
     <main>
-      <!--
-        Sección "hero": el bloque grande de bienvenida con la imagen de fondo.
-        La imagen de fondo la pongo desde el CSS, no con <img>,
-        porque es decorativa (no aporta información).
-      -->
       <section class="hero">
         <!-- Solo debe haber UN <h1> por página: es el título principal -->
         <h1>Encuentra tu próximo trabajo</h1>
@@ -107,9 +81,7 @@
           role="search" le dice a los lectores de pantalla que esto es un buscador.
           action="./empleos.html" -> al pulsar "Buscar" el navegador nos lleva
           a la página de resultados. Así cumplo "navegación entre archivos"
-          SIN usar nada de JavaScript.
-          method="get" -> los datos viajan en la URL (?search=react), que es
-          lo correcto para una búsqueda.
+          method="get" -> los datos viajan en la URL (?search=react),
         -->
         <form class="hero-form" role="search" action="./empleos.html" method="get">
           <div class="search-bar">
@@ -143,10 +115,6 @@
             />
           </div>
 
-          <!--
-            type="submit" hace que este botón envíe el formulario.
-            Como el action es empleos.html, nos lleva a los resultados.
-          -->
           <button type="submit" class="button-primary">Buscar</button>
         </form>
       </section>
@@ -190,7 +158,7 @@
 
     <footer class="site-footer">
       <!-- &copy; es la entidad HTML del símbolo © -->
-      <small>&copy; 2025 DevJobs. Todos los derechos reservados.</small>
+      <small>&copy; 2025 DevJobs. Todos los derechos reservados. Natalia Mejia</small>
     </footer>
   </body>
 </html>
