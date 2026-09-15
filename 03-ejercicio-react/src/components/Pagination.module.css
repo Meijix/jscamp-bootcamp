@@ -1,0 +1,67 @@
+/* =========================================================
+   CSS MODULES
+   =========================================================
+   El nombre acaba en ".module.css" a propósito: eso le dice a Vite
+   que estos estilos son SOLO para este componente.
+
+   Vite convierte ".pagination" en algo como "_pagination_x7k2a_1",
+   un nombre único. Así nunca chocan con otra clase ".pagination"
+   que haya en otro archivo del proyecto.
+
+   Se usa importándolo como un objeto:
+     import styles from './Pagination.module.css'
+     <nav className={styles.pagination}>
+   ========================================================= */
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+
+  /* margin-block = margen arriba y abajo (atajo moderno) */
+  margin-block: 2rem;
+}
+
+/* Los enlaces de dentro de la paginación */
+.pagination a {
+  /* flex + center = el número queda centrado dentro del cuadradito */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+
+  text-decoration: none;
+  color: var(--text-muted); /* variable que ya viene definida en index.css */
+  border-radius: 0.375rem;
+  cursor: pointer;
+
+  /* transition suaviza los cambios de color al pasar el ratón */
+  transition: all 0.3s;
+}
+
+.pagination a:hover {
+  background-color: #fff;
+}
+
+/* :active = mientras se mantiene pulsado. Efecto "se hunde el botón" */
+.pagination a:active {
+  transform: scale(0.9);
+}
+
+/* La página en la que estamos ahora mismo */
+.isActive {
+  background-color: var(--primary-light);
+  color: white;
+
+  /* pointer-events: none = ignora los clicks. No tiene sentido
+     hacer click en la página en la que ya estás. */
+  pointer-events: none;
+}
+
+/* Las flechas "anterior"/"siguiente" cuando no se pueden usar */
+.isDisabled {
+  opacity: 0.4; /* se ve apagado = pista visual de "no disponible" */
+  pointer-events: none;
+  cursor: default;
+}
