@@ -1,8 +1,40 @@
+/* =========================================================
+   funcionalidad al formulario de la Home
+   =========================================================
+*/
+
+import { useRouter } from '../hooks/useRouter.jsx'
+
 export function HomePage() {
+  // navigateTo cambia de "página" sin recargar el navegador
+  const { navigateTo } = useRouter()
+
+  const handleSubmit = (event) => {
+    // Sin esto el navegador recargaría la página al enviar el formulario
+    event.preventDefault()
+
+    /*
+      FormData lee de golpe todos los campos del formulario
+    */
+    const formData = new FormData(event.currentTarget)
+    const texto = formData.get('search')
+
+    /*
+      URLSearchParams se encarga de "escapar" los caracteres raros.
+      Si el usuario escribe "C++ & React", lo convierte en
+      "C%2B%2B+%26+React", que es lo válido en una URL.
+      Hacerlo a mano con concatenación de strings daría errores.
+    */
+    const params = new URLSearchParams()
+    if (texto) params.set('text', texto)
+
+    navigateTo(`/search?${params.toString()}`)
+  }
+
   return (
     <main>
       <section>
-        <img src="./background.webp" width="200" />
+        <img src="./background.webp" width="200" alt="" />
 
         <h1>Encuentra el trabajo de tus sueños</h1>
 
@@ -10,7 +42,8 @@ export function HomePage() {
           Únete a la comunidad más grande de desarrolladores y encuentra tu próxima oportunidad.
         </p>
 
-        <form role="search">
+        {/* onSubmit se dispara tanto al pulsar el botón como al pulsar Enter */}
+        <form role="search" onSubmit={handleSubmit}>
           <div>
             <svg
               width="24"
