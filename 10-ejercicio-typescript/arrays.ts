@@ -1,6 +1,22 @@
-/* Aquí deberás definir los tipos Job y Candidate creados en objects.ts para los arrays dados */
+/* =========================================================
+   EJERCICIO 3: Arrays tipados
+   =========================================================
+   Aquí solo hay que añadir el tipo a cada array.
 
-export const jobs = [
+   ¿Y si no lo pusiera? TypeScript "infiere" (adivina) el tipo mirando
+   los datos, y adivinaría que experienceLevel es un string cualquiera
+   en vez del literal 'mid' | 'senior'. Al escribir el tipo a mano
+   consigo dos cosas:
+
+     1. Que TypeScript compruebe que los datos son correctos.
+        Si me equivocara y escribiera workMode: 'hibrid', me avisaría.
+     2. Que las funciones que reciben estos arrays sepan exactamente
+        qué les llega.
+   ========================================================= */
+
+import type { Job, Company, Candidate } from './objects.ts'
+
+export const jobs: Job[] = [
   {
     id: '1',
     title: 'Frontend Developer',
@@ -42,7 +58,7 @@ export const jobs = [
   },
 ]
 
-export const companies = [
+export const companies: Company[] = [
   {
     id: '1',
     name: 'Midudev S.A',
@@ -69,7 +85,7 @@ export const companies = [
   },
 ]
 
-export const candidates = [
+export const candidates: Candidate[] = [
   {
     id: '1',
     name: 'Ana García',
