@@ -37,7 +37,13 @@ jobsRouter.get('/:id', JobController.getId)
 
 jobsRouter.post('/', validateCreate, JobController.create)
 
-jobsRouter.put('/:id', JobController.update)
+/*
+  El PUT también lleva validateCreate (no validatePartialUpdate).
+  Motivo: PUT REEMPLAZA el recurso entero, así que el body tiene que
+  traer todos los campos obligatorios, igual que en un POST.
+  El que admite campos sueltos es el PATCH.
+*/
+jobsRouter.put('/:id', validateCreate, JobController.update)
 
 jobsRouter.patch('/:id', validatePartialUpdate, JobController.partialUpdate)
 

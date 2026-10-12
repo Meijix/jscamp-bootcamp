@@ -5,11 +5,20 @@ export class JobModel {
 
     const filteredJobs = jobs.filter(job => {
 
-      const normalizeTech = () => text.toLowerCase()
+      /*
+        BUG QUE ENCONTRÉ AL ESCRIBIR LOS TESTS:
+        antes esto era `const normalizeTech = () => text.toLowerCase()`,
+        es decir, una FUNCIÓN. Y luego se pasaba a .includes(normalizeTech),
+        que buscaba la función dentro del texto. Nunca coincidía nada,
+        así que el filtro ?text= siempre devolvía una lista vacía.
+
+        La solución es guardar el VALOR, no la función.
+      */
+      const normalizedText = text ? text.toLowerCase() : ''
 
       const matchText = text
-        ? job.titulo.toLowerCase().includes(normalizeTech)
-        || job.descripcion.toLowerCase().includes(normalizeTech)
+        ? job.titulo.toLowerCase().includes(normalizedText)
+        || job.descripcion.toLowerCase().includes(normalizedText)
         : true
 
       const matchTech = technology ? (job.data.technology.includes(technology)) : true
@@ -22,9 +31,18 @@ export class JobModel {
     const limitNumber = Number(limit)
     const offsetNumber = Number(offset)
 
+    /*
+      Guardo el total ANTES de cortar la página.
+      Antes el controlador devolvía total: paginatedJobs.length, que
+      es el tamaño de la página (como mucho 10), no el total de
+      resultados. Con ese dato el cliente no puede calcular cuántas
+      páginas hay, así que la paginación no funcionaba.
+    */
+    const total = filteredJobs.length
+
     const paginatedJobs = filteredJobs.slice(offsetNumber, offsetNumber + limitNumber)
 
-    return { paginatedJobs, limitNumber, offsetNumber }
+    return { paginatedJobs, total, limitNumber, offsetNumber }
   }
 
   static async getId(id) {
