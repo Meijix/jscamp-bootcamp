@@ -4,8 +4,14 @@
   "description": "",
   "main": "index.ts",
   "type": "module",
-  "scripts": {},
+  "scripts": {
+    "start": "node index.ts",
+    "check": "tsc --noEmit"
+  },
   "keywords": [],
   "author": "",
-  "license": ""
+  "license": "",
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
 }

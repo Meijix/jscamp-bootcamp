@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    // Versión de JavaScript a la que se traduce el TypeScript
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+
+    // Permite escribir import './archivo.ts' (con la extensión .ts)
+    // que es como lo ejecuta Node directamente
+    "allowImportingTsExtensions": true,
+
+    // Solo quiero COMPROBAR los tipos, no generar archivos .js
+    // (de ejecutar el .ts ya se encarga Node por su cuenta)
+    "noEmit": true,
+
+    // Librerías de tipos disponibles (console, Date, Math...)
+    "lib": ["ES2022", "DOM"],
+
+    // "strict" activa de golpe todas las comprobaciones estrictas.
+    // Es lo primero que hay que poner en cualquier proyecto: sin él,
+    // TypeScript deja pasar undefined por todas partes y pierde
+    // buena parte de su utilidad.
+    "strict": true,
+
+    // Avisa si una variable o import no se usa
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+
+    // Obliga a que todos los caminos de una función devuelvan algo
+    "noImplicitReturns": true,
+
+    // Evita problemas de mayúsculas/minúsculas entre Mac/Linux/Windows
+    "forceConsistentCasingInFileNames": true,
+
+    "skipLibCheck": true
+  },
+  "include": ["*.ts"]
+}
