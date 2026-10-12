@@ -34,10 +34,17 @@ export function HomePage () {
               <path d="M21 21l-6 -6" />
             </svg>
 
+            {/*
+              type="search" (antes era "text").
+              Es lo semánticamente correcto para un buscador y además
+              hace que su rol de accesibilidad sea "searchbox", que es
+              como lo localizan los tests E2E del ejercicio 09 con
+              getByRole('searchbox').
+            */}
             <input
               name="search"
               required
-              type="text"
+              type="search"
               placeholder="Buscar empleos por título, habilidad o empresa"
             />
 

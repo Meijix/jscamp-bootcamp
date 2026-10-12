@@ -429,3 +429,78 @@ article {
     pointer-events: none;
   }
 }
+
+/* =========================================================
+   ESTILOS AÑADIDOS EN EL EJERCICIO 04
+   ========================================================= */
+
+/*
+  QUINTA PARTE - Tarea 1: links activos.
+  NavLink me pone la clase "is-active" automáticamente cuando la
+  URL coincide, así que solo tengo que darle un estilo distinto.
+*/
+.nav-link {
+  opacity: 0.75;
+  transition: opacity 0.2s;
+}
+
+.nav-link:hover {
+  opacity: 1;
+}
+
+.nav-link.is-active {
+  opacity: 1;
+  font-weight: 700;
+  /* La línea de debajo marca visualmente en qué sección estás */
+  border-bottom: 2px solid #09f;
+}
+
+/* QUINTA PARTE - Tarea 2: botón de iniciar sesión */
+.button-login {
+  background: transparent;
+  color: inherit;
+  /* currentColor = el mismo color que tenga el texto. Así el borde
+     siempre combina, aunque cambie el color del header. */
+  border: 1px solid currentColor;
+  border-radius: 0.375rem;
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.button-login:hover {
+  background: rgb(255 255 255 / 0.15);
+}
+
+/* QUINTA PARTE - Tarea 3: botón de favoritos */
+.button-favorite {
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.375rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap; /* evita que "Agregar a favoritos" se parta en 2 líneas */
+  transition: all 0.2s;
+}
+
+.button-favorite:hover {
+  border-color: #f59e0b;
+}
+
+/*
+  aria-pressed="true" lo pone el propio botón cuando está activado.
+  Estilar a partir del atributo de accesibilidad (en vez de una clase
+  extra) me asegura de que lo visual y lo accesible nunca se desincronizan.
+*/
+.button-favorite[aria-pressed='true'] {
+  border-color: #f59e0b;
+  color: #b45309;
+  font-weight: 600;
+}
+
+/* Un botón deshabilitado tiene que NOTARSE que lo está */
+.button-apply-job:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

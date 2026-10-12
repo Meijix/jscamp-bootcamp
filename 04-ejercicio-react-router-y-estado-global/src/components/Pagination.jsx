@@ -40,8 +40,25 @@ export function Pagination({ currentPage = 1, totalPages = 10, onPageChange }) {
   }
 
   return (
-    <nav className={styles.pagination}>
-      <a href={buildPageUrl(currentPage - 1)} style={stylePrevButton} onClick={handlePrevClick}>
+    /*
+      aria-label le da un NOMBRE a esta navegación.
+      Hace falta por dos motivos:
+        1. Accesibilidad: una página puede tener varios <nav> (el menú
+           y la paginación) y el lector de pantalla necesita
+           distinguirlos.
+        2. Los tests E2E la localizan con
+           getByRole('navigation', { name: 'Paginación de resultados' }),
+           que es el selector recomendado.
+    */
+    <nav className={styles.pagination} aria-label="Paginación de resultados">
+      {/* Igual aquí: sin aria-label, un enlace que solo tiene un icono
+          SVG dentro no tiene ningún texto con el que identificarlo */}
+      <a
+        href={buildPageUrl(currentPage - 1)}
+        style={stylePrevButton}
+        onClick={handlePrevClick}
+        aria-label="Página anterior"
+      >
         <svg
           width="16"
           height="16"
@@ -69,7 +86,12 @@ export function Pagination({ currentPage = 1, totalPages = 10, onPageChange }) {
         </a>
       ))}
 
-      <a href={buildPageUrl(currentPage + 1)} style={styleNextButton} onClick={handleNextClick}>
+      <a
+        href={buildPageUrl(currentPage + 1)}
+        style={styleNextButton}
+        onClick={handleNextClick}
+        aria-label="Página siguiente"
+      >
         <svg
           width="16"
           height="16"

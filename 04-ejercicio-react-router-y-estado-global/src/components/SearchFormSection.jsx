@@ -1,77 +1,66 @@
-import { useId, useState, useRef } from 'react'
+/* =========================================================
+   Formulario de búsqueda (ahora controlado desde la URL)
+   =========================================================
+   Este componente sigue siendo "tonto": no guarda filtros, solo
+   los muestra y avisa al padre cuando cambian.
 
-const useSearchForm = ({
-  idTechnology,
-  idLocation,
-  idExperienceLevel,
-  idText,
-  onSearch,
-  onTextFilter,
-}) => {
-  const timeoutId = useRef(null)
-  const [searchText, setSearchText] = useState('')
+   La diferencia con el ejercicio 03 es que ahora el padre no guarda
+   los filtros en un useState, sino en la URL. A este componente
+   le da exactamente igual: recibe las mismas props.
+   Esa es la ventaja de separar bien las responsabilidades.
+   ========================================================= */
 
-  const handleSubmit = (event) => {
-    event.preventDefault()
+import { useEffect, useRef, useState } from 'react'
 
-    const formData = new FormData(event.currentTarget)
+export function SearchFormSection({ initialText, filters, onTextChange, onFilterChange }) {
+  /*
+    El input necesita estado propio para responder instantáneamente
+    a cada tecla. Al padre solo le aviso 400ms después (debounce),
+    porque cada aviso provoca una llamada a la API.
+  */
+  const [searchText, setSearchText] = useState(initialText ?? '')
 
-    if (event.target.name === idText) {
-      return // ya lo manejamos en onChange
+  const timeoutRef = useRef(null)
+
+  /*
+    Guardo si es el primer render.
+    Sin esto, al entrar con /search?text=react el efecto se dispararía
+    nada más montar y avisaría al padre con el mismo texto que ya
+    tiene, provocando una petición extra e inútil.
+  */
+  const esPrimerRender = useRef(true)
+
+  useEffect(() => {
+    if (esPrimerRender.current) {
+      esPrimerRender.current = false
+      return
     }
 
-    const filters = {
-      technology: formData.get(idTechnology),
-      location: formData.get(idLocation),
-      experienceLevel: formData.get(idExperienceLevel),
-    }
+    // Cancelo la cuenta atrás anterior: el usuario sigue escribiendo
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
 
-    onSearch(filters)
-  }
+    timeoutRef.current = setTimeout(() => {
+      onTextChange(searchText)
+    }, 400)
 
-  const handleTextChange = (event) => {
-    const text = event.target.value
-    setSearchText(text) // actualizamos el input inmediatamente
+    return () => clearTimeout(timeoutRef.current)
+  }, [searchText, onTextChange])
 
-    // Debounce: Cancelar el timeout anterior
-    if (timeoutId.current) {
-      clearTimeout(timeoutId.current)
-    }
-
-    timeoutId.current = setTimeout(() => {
-      onTextFilter(text)
-    }, 500)
-  }
-
-  return {
-    searchText,
-    handleSubmit,
-    handleTextChange,
-  }
-}
-
-export function SearchFormSection({ onTextFilter, onSearch, initialText }) {
-  const idText = useId()
-  const idTechnology = useId()
-  const idLocation = useId()
-  const idExperienceLevel = useId()
-
-  const inputRef = useRef()
-
-  const { handleSubmit, handleTextChange } = useSearchForm({
-    idTechnology,
-    idLocation,
-    idExperienceLevel,
-    idText,
-    onSearch,
-    onTextFilter,
-  })
+  const handleTextChange = (event) => setSearchText(event.target.value)
 
   const handleClearInput = (event) => {
     event.preventDefault()
+    setSearchText('')
+  }
 
-    inputRef.current.value = ''
-    onTextFilter('')
+  /*
+    Un único manejador para los tres selects.
+    event.target.name me dice cuál cambió, así que el nombre de cada
+    <select> tiene que coincidir con el parámetro de la URL/API:
+    technology, type y level.
+  */
+  const handleSelectChange = (event) => {
+    onFilterChange(event.target.name, event.target.value)
   }
 
   return (
@@ -79,7 +68,7 @@ export function SearchFormSection({ onTextFilter, onSearch, initialText }) {
       <h1>Encuentra tu próximo trabajo</h1>
       <p>Explora miles de oportunidades en el sector tecnológico.</p>
 
-      <form onChange={handleSubmit} id="empleos-search-form" role="search">
+      <form id="empleos-search-form" role="search" onSubmit={(e) => e.preventDefault()}>
         <div className="search-bar">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -91,65 +80,82 @@ export function SearchFormSection({ onTextFilter, onSearch, initialText }) {
             strokeWidth="1"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="icon icon-tabler icons-tabler-outline icon-tabler-search"
           >
             <path stroke="none" d="M0 0h24v24H0z" fill="none" />
             <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" />
             <path d="M21 21l-6 -6" />
           </svg>
 
+          {/* type="search" -> Playwright lo encuentra con getByRole('searchbox') */}
           <input
-            ref={inputRef}
-            name={idText}
+            name="search"
             id="empleos-search-input"
-            type="text"
+            type="search"
             placeholder="Buscar trabajos, empresas o habilidades"
+            value={searchText}
             onChange={handleTextChange}
-            defaultValue={initialText}
           />
 
-          <button onClick={handleClearInput}>✖︎</button>
+          <button type="button" onClick={handleClearInput} aria-label="Limpiar búsqueda">
+            ✖︎
+          </button>
         </div>
 
         <div className="search-filters">
-          <select name={idTechnology} id="filter-technology">
+          {/*
+            Los valores de las <option> son los que entiende la API.
+            Por ejemplo "node" (no "nodejs"): lo comprobé llamando a
+            https://jscamp-api.vercel.app/api/jobs y mirando los datos.
+          */}
+          <select
+            name="technology"
+            id="filter-technology"
+            value={filters.technology}
+            onChange={handleSelectChange}
+          >
             <option value="">Tecnología</option>
             <optgroup label="Tecnologías populares">
               <option value="javascript">JavaScript</option>
-              <option value="python">Python</option>
+              <option value="typescript">TypeScript</option>
               <option value="react">React</option>
-              <option value="nodejs">Node.js</option>
+              <option value="node">Node.js</option>
+              <option value="python">Python</option>
             </optgroup>
-            <option value="java">Java</option>
-            <hr />
-            <option value="csharp">C#</option>
-            <option value="c">C</option>
-            <option value="c++">C++</option>
-            <hr />
-            <option value="ruby">Ruby</option>
-            <option value="php">PHP</option>
+            <option value="docker">Docker</option>
+            <option value="aws">AWS</option>
+            <option value="kotlin">Kotlin</option>
+            <option value="swift">Swift</option>
+            <option value="sql">SQL</option>
           </select>
 
-          <select name={idLocation} id="filter-location">
+          <select name="type" id="filter-location" value={filters.type} onChange={handleSelectChange}>
             <option value="">Ubicación</option>
             <option value="remoto">Remoto</option>
             <option value="cdmx">Ciudad de México</option>
             <option value="guadalajara">Guadalajara</option>
             <option value="monterrey">Monterrey</option>
             <option value="barcelona">Barcelona</option>
+            <option value="madrid">Madrid</option>
+            <option value="valencia">Valencia</option>
+            <option value="bogota">Bogotá</option>
+            <option value="lima">Lima</option>
+            <option value="santiago">Santiago de Chile</option>
+            <option value="bsas">Buenos Aires</option>
           </select>
 
-          <select name={idExperienceLevel} id="filter-experience-level">
+          <select
+            name="level"
+            id="filter-experience-level"
+            value={filters.level}
+            onChange={handleSelectChange}
+          >
             <option value="">Nivel de experiencia</option>
             <option value="junior">Junior</option>
             <option value="mid">Mid-level</option>
             <option value="senior">Senior</option>
-            <option value="lead">Lead</option>
           </select>
         </div>
       </form>
-
-      <span id="filter-selected-value"></span>
     </section>
   )
 }
