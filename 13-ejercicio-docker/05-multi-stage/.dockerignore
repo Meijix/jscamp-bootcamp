@@ -1,0 +1,18 @@
+# Importante también aquí: sin esto, el node_modules de mi Mac
+# (compilado para macOS) se copiaría dentro de una imagen Linux
+# y esbuild fallaría al arrancar.
+node_modules
+
+# dist se genera dentro de la imagen con "npm run build".
+# Si copiara el mío, podría estar desactualizado y no me daría cuenta.
+dist
+
+.git
+.gitignore
+*.md
+.env
+.env.*
+.DS_Store
+.vscode
+Dockerfile
+.dockerignore
