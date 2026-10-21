@@ -1,0 +1,73 @@
+# =========================================================
+# TAREA 1: Mi primer workflow
+# =========================================================
+# Un "workflow" es un archivo YAML que le dice a GitHub qué hacer
+# y cuándo hacerlo. Vive en .github/workflows/ y se ejecuta en
+# ordenadores de GitHub (los "runners"), no en tu portátil.
+#
+# ⚠️ NOTA IMPORTANTE: GitHub solo lee los workflows que están en
+# .github/workflows/ EN LA RAÍZ del repositorio. Como el enunciado
+# pide crearlos dentro de 12-ejercicio-cicd/, aquí están tal cual
+# los pide. Para que se ejecuten de verdad, habría que copiar la
+# carpeta .github/ a la raíz del repo.
+# =========================================================
+
+# Nombre que se ve en la pestaña Actions de GitHub
+name: 01 - Hello
+
+# "on" define CUÁNDO se ejecuta el workflow
+on:
+  # workflow_dispatch = "solo cuando yo le dé al botón".
+  # Añade un botón "Run workflow" en la pestaña Actions.
+  workflow_dispatch:
+
+jobs:
+  # ---------------------------------------------------------
+  # Los jobs se ejecutan EN PARALELO por defecto, cada uno en su
+  # propia máquina virtual, recién creada y vacía.
+  # Para que uno espere a otro hay que usar "needs" (ver 05-ci.yml).
+  # ---------------------------------------------------------
+
+  saludar:
+    # runs-on = qué sistema operativo usa la máquina.
+    # Uso una versión fija (24.04) en vez de "ubuntu-latest" para que
+    # el día que GitHub actualice el "latest" no se me rompa el pipeline
+    # sin haber tocado nada.
+    runs-on: ubuntu-24.04
+
+    steps:
+      # Cada "step" es un paso. Se ejecutan de arriba abajo, y si
+      # uno falla, los siguientes no se ejecutan.
+      - name: Saludar
+        run: echo "Hola desde GitHub Actions!"
+
+      - name: Mostrar la fecha
+        run: date
+
+      - name: Listar archivos
+        # Esto va a mostrar una carpeta VACÍA. Y es justo lo que
+        # quiero enseñar: ver la respuesta a la pregunta de abajo.
+        run: ls -la
+
+  repo-files:
+    runs-on: ubuntu-24.04
+
+    steps:
+      # ---------------------------------------------------------
+      # RESPUESTA A LA PREGUNTA DEL ENUNCIADO:
+      # ¿Por qué este job necesita actions/checkout y el otro no?
+      #
+      # Porque el runner es una máquina virtual LIMPIA: no tiene tu
+      # código. GitHub no lo descarga solo, sería un desperdicio para
+      # workflows que no lo necesitan (como el job "saludar", que solo
+      # imprime texto).
+      #
+      # actions/checkout es la action oficial que hace el "git clone"
+      # de tu repositorio dentro del runner. Por eso el job de arriba
+      # lista una carpeta vacía y este sí ve los archivos.
+      # ---------------------------------------------------------
+      - name: Descargar el código del repositorio
+        uses: actions/checkout@v6
+
+      - name: Listar archivos
+        run: ls -la

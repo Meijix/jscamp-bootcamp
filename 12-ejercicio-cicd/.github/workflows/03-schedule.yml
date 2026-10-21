@@ -1,0 +1,55 @@
+# =========================================================
+# TAREA 3: Workflow programado con cron
+# =========================================================
+# Sirve para tareas que se repiten solas: limpiar datos viejos,
+# generar informes, comprobar que los enlaces siguen vivos,
+# revisar si hay dependencias con vulnerabilidades...
+# =========================================================
+
+name: 03 - Schedule
+
+on:
+  schedule:
+    # -----------------------------------------------------
+    # BONUS DEL ENUNCIADO: qué significa cada campo del cron.
+    #
+    # Una expresión cron tiene CINCO campos separados por espacios:
+    #
+    #   ┌───────────── minuto        (0 - 59)
+    #   │ ┌─────────── hora          (0 - 23)
+    #   │ │ ┌───────── día del mes   (1 - 31)
+    #   │ │ │ ┌─────── mes           (1 - 12)
+    #   │ │ │ │ ┌───── día de semana (0 - 6, siendo 0 = domingo)
+    #   │ │ │ │ │
+    #   0 9 * * 1
+    #
+    # El asterisco (*) significa "cualquier valor".
+    #
+    # Así que "0 9 * * 1" se lee:
+    #   minuto 0, de la hora 9, de cualquier día del mes,
+    #   de cualquier mes, pero solo si es LUNES (el 1).
+    #   -> "todos los lunes a las 9:00"
+    #
+    # ⚠️ Dos avisos importantes:
+    #
+    # 1. La hora es UTC, SIEMPRE. GitHub no conoce tu zona horaria.
+    #    En España en invierno son las 10:00, y en verano las 11:00.
+    #
+    # 2. GitHub no garantiza la puntualidad. Si hay mucha carga, el
+    #    workflow puede arrancar con bastantes minutos de retraso.
+    #    No lo uses para nada que dependa del segundo exacto.
+    # -----------------------------------------------------
+    - cron: '0 9 * * 1'
+
+  # El "truco" que sugiere el enunciado: lo dejo puesto a propósito
+  # para poder lanzarlo a mano y comprobar que funciona sin tener
+  # que esperar al lunes. No molesta y es cómodo tenerlo.
+  workflow_dispatch:
+
+jobs:
+  saludo-semanal:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Saludar
+        run: echo "Hola desde GitHub Actions!"
