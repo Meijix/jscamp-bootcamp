@@ -1,0 +1,77 @@
+# =========================================================
+# TAREA 4: Reaccionar a eventos del repositorio
+# =========================================================
+# GitHub Actions no sirve solo para tests: puede reaccionar a
+# casi cualquier cosa que pase en el repo. Es la base de los bots
+# que dan la bienvenida, ponen etiquetas o piden revisión.
+# =========================================================
+
+name: 04 - Events
+
+on:
+  issues:
+    # "types" afina el evento: no quiero reaccionar a TODO lo que
+    # pase con las issues (editarlas, cerrarlas, etiquetarlas...),
+    # solo a que se abran o se reasignen.
+    types: [opened, assigned]
+
+  issue_comment:
+    types: [created]
+
+  # Comentarios dentro de la revisión de código de un Pull Request
+  pull_request_review_comment:
+    types: [created]
+
+jobs:
+  inspect-event:
+    runs-on: ubuntu-24.04
+
+    # ---------------------------------------------------------
+    # PERMISOS.
+    # Por defecto el token del workflow es de SOLO LECTURA.
+    # Como quiero escribir un comentario, necesito pedir permiso
+    # explícito de escritura sobre las issues.
+    #
+    # Se pide lo mínimo imprescindible a propósito: si el workflow
+    # tuviera un fallo o una dependencia maliciosa, el daño posible
+    # queda limitado a comentar en issues.
+    # ---------------------------------------------------------
+    permissions:
+      issues: write
+
+    steps:
+      - name: Mostrar la información del evento
+        # Igual que en la tarea 2: los datos que vienen de fuera
+        # (el cuerpo de un comentario lo escribe cualquiera) van
+        # por env, NUNCA interpolados dentro del run.
+        # Aquí es todavía más importante: un atacante podría abrir
+        # una issue con un comando dentro del texto.
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+        run: |
+          echo "Evento:            $EVENT_NAME"
+          echo "Número de issue:   $ISSUE_NUMBER"
+          echo "Cuerpo del comentario: $COMMENT_BODY"
+
+      - name: Comentar automáticamente al abrir una issue
+        # Doble condición: que el evento sea "issues" Y que la acción
+        # concreta sea "opened". Si solo comprobara el segundo, este
+        # step también saltaría con otros eventos que tienen un
+        # "opened" (como los pull requests).
+        if: github.event_name == 'issues' && github.event.action == 'opened'
+
+        env:
+          # gh (la CLI de GitHub) viene ya instalada en los runners,
+          # pero necesita un token para autenticarse.
+          # secrets.GITHUB_TOKEN lo genera GitHub solo para esta
+          # ejecución y caduca al terminar. No hay que crearlo a mano.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          # El nombre de quien abrió la issue, para saludarle
+          AUTHOR: ${{ github.event.issue.user.login }}
+        run: |
+          gh issue comment "$ISSUE_NUMBER" \
+            --repo "${{ github.repository }}" \
+            --body "¡Gracias por tu aporte, @$AUTHOR! 🙌 Le echaremos un vistazo lo antes posible."
