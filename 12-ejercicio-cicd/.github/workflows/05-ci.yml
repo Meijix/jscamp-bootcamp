@@ -1,0 +1,169 @@
+# =========================================================
+# TAREA 5 (+ TAREA 7 opcional): Pipeline de CI completo
+# =========================================================
+# Este es el workflow "de verdad": el que protege el proyecto.
+# Cada vez que alguien sube código o abre un PR, comprueba solo
+# que el estilo es correcto y que los tests pasan.
+#
+# El diseño en dos fases es a propósito:
+#
+#   lint + test  (en paralelo, los 4 a la vez)
+#        ↓
+#      build     (solo si lo anterior fue bien)
+#
+# ¿Por qué? Porque compilar tarda y consume minutos de CI.
+# Si los tests fallan, el código no va a salir a producción de
+# todas formas, así que compilar sería tirar el tiempo.
+# =========================================================
+
+name: 05 - CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # =======================================================
+  # FASE 1: los cuatro en paralelo
+  # =======================================================
+  # No tienen "needs", así que GitHub los arranca todos a la vez,
+  # cada uno en su propia máquina. El tiempo total es el del más
+  # lento, no la suma de los cuatro.
+  # =======================================================
+
+  frontend-lint:
+    name: Frontend · Lint
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+
+      # Aquí uso mi composite action de la tarea 6.
+      # El "./" del principio es obligatorio: le dice a GitHub que
+      # la action está en este mismo repositorio y no en el
+      # Marketplace. Y por eso el checkout tiene que ir ANTES:
+      # si no, el archivo action.yml todavía no existe en el runner.
+      - uses: ./.github/actions/setup-pnpm-ci-cd
+
+      - name: Lint
+        working-directory: 12-ejercicio-cicd
+        run: pnpm lint:frontend
+
+  frontend-test:
+    name: Frontend · Test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-pnpm-ci-cd
+
+      - name: Test
+        working-directory: 12-ejercicio-cicd
+        run: pnpm test:frontend
+
+  backend-lint:
+    name: Backend · Lint
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-pnpm-ci-cd
+
+      - name: Lint
+        working-directory: 12-ejercicio-cicd
+        run: pnpm lint:backend
+
+  backend-test:
+    name: Backend · Test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-pnpm-ci-cd
+
+      - name: Test
+        working-directory: 12-ejercicio-cicd
+        run: pnpm test:backend
+
+  # =======================================================
+  # FASE 2: los builds, solo si la fase 1 fue bien
+  # =======================================================
+
+  frontend-build:
+    name: Frontend · Build
+    runs-on: ubuntu-24.04
+
+    # "needs" crea la DEPENDENCIA entre jobs.
+    # Este job espera a que los dos terminen, y solo se ejecuta si
+    # AMBOS acabaron en verde. Si uno falla, este aparece como
+    # "skipped" (saltado) en la pestaña Actions.
+    needs: [frontend-lint, frontend-test]
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-pnpm-ci-cd
+
+      - name: Build
+        working-directory: 12-ejercicio-cicd
+        run: pnpm build:frontend
+
+  backend-build:
+    name: Backend · Build
+    runs-on: ubuntu-24.04
+    needs: [backend-lint, backend-test]
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup-pnpm-ci-cd
+
+      - name: Build
+        working-directory: 12-ejercicio-cicd
+        run: pnpm build:backend
+
+  # =======================================================
+  # TAREA 7 (OPCIONAL): matriz multiplataforma
+  # =======================================================
+  # Una "matriz" genera automáticamente un job por cada combinación
+  # de valores. Sirve para asegurarte de que el código funciona en
+  # todos los sistemas y versiones de Node donde va a correr.
+  # =======================================================
+
+  frontend-test-matrix:
+    name: Frontend · Test (${{ matrix.os }}, Node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+
+    # Sin "needs": es independiente del resto del pipeline, tal y
+    # como pide el enunciado. Si falla en Windows, no bloquea el
+    # frontend-build.
+
+    strategy:
+      # fail-fast: false es CLAVE aquí.
+      # Por defecto, en cuanto una combinación falla, GitHub cancela
+      # todas las demás. Y entonces no te enteras de si el fallo era
+      # solo de Windows o de todas las plataformas.
+      # Con false, todas terminan y ves el cuadro completo.
+      fail-fast: false
+
+      matrix:
+        # 3 sistemas × 2 versiones de Node = 6 ejecuciones
+        os: [ubuntu-24.04, macos-latest, windows-latest]
+        node: ['22', '24']
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: ./.github/actions/setup-pnpm-ci-cd
+        with:
+          # matrix.node contiene el valor de esta combinación concreta
+          node-version: ${{ matrix.node }}
+
+      - name: Test
+        working-directory: 12-ejercicio-cicd
+        # ---------------------------------------------------------
+        # El aviso del enunciado sobre Windows:
+        # el shell por defecto en Windows es PowerShell, que trata
+        # algunos caracteres de forma distinta a bash.
+        # Forzando "shell: bash" el comando se ejecuta igual en los
+        # tres sistemas y me ahorro sorpresas.
+        # (Los runners de Windows de GitHub traen bash incluido.)
+        # ---------------------------------------------------------
+        shell: bash
+        run: pnpm test:frontend

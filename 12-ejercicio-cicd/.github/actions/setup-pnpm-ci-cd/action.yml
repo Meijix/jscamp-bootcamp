@@ -1,0 +1,77 @@
+# =========================================================
+# TAREA 6: Composite action reutilizable
+# =========================================================
+# Una "composite action" es un grupo de steps empaquetado con un
+# nombre, para poder reutilizarlo desde varios jobs.
+#
+# ¿Por qué me hace falta? Porque en 05-ci.yml tengo SEIS jobs y
+# los seis necesitan exactamente lo mismo: instalar pnpm, instalar
+# Node e instalar las dependencias.
+#
+# Sin esto tendría esos 3 steps copiados 6 veces (18 bloques).
+# Y el día que quisiera subir de Node 24 a Node 26, tendría que
+# acordarme de cambiarlo en los 6 sitios... y me olvidaría de uno.
+# =========================================================
+
+name: 'Setup pnpm and Node.js for CI/CD'
+description: 'Setup pnpm and Node.js for CI/CD'
+
+inputs:
+  node-version:
+    description: 'Versión de Node.js a instalar'
+    required: false
+    # Ojo: los valores por defecto van SIEMPRE entre comillas.
+    # Sin ellas, YAML leería 24 como número y "24.0" se convertiría
+    # en 24, que no es una versión válida de Node.
+    default: '24'
+
+  pnpm-version:
+    description: 'Versión de pnpm a instalar'
+    required: false
+    default: '11'
+
+runs:
+  # "composite" = esta action es una lista de steps.
+  # (Las otras opciones son 'node20' para actions escritas en
+  # JavaScript y 'docker' para las que corren en un contenedor.)
+  using: 'composite'
+
+  steps:
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v6
+      with:
+        version: ${{ inputs.pnpm-version }}
+        # run_install: false -> solo instala la herramienta pnpm,
+        # no ejecuta todavía el install de las dependencias.
+        # Lo hago así porque quiero instalar Node ANTES (para que la
+        # caché del paso siguiente funcione), y luego ya instalo.
+        run_install: false
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: ${{ inputs.node-version }}
+        # cache: 'pnpm' guarda la carpeta de paquetes descargados
+        # entre ejecuciones. Es lo que hace que un CI tarde 30
+        # segundos en vez de 3 minutos.
+        cache: 'pnpm'
+        cache-dependency-path: 12-ejercicio-cicd/pnpm-lock.yaml
+
+    - name: Install dependencies
+      # ⚠️ En una composite action, cada step con "run" DEBE llevar
+      # "shell". En un workflow normal se puede omitir, pero aquí no:
+      # si se olvida, el archivo ni siquiera se carga.
+      shell: bash
+
+      # working-directory porque el monorepo no está en la raíz del
+      # repositorio, sino dentro de la carpeta del ejercicio.
+      working-directory: 12-ejercicio-cicd
+
+      # --frozen-lockfile es LA opción correcta para CI:
+      # instala exactamente las versiones del pnpm-lock.yaml y falla
+      # si el lockfile no cuadra con el package.json.
+      #
+      # Sin ella, pnpm podría instalar versiones más nuevas y tendrías
+      # un CI que pasa hoy y falla mañana sin haber tocado el código.
+      # (Requiere que el pnpm-lock.yaml esté subido al repo.)
+      run: pnpm install --frozen-lockfile
