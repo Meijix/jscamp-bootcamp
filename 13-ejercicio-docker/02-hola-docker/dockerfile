@@ -1,0 +1,33 @@
+# =========================================================
+# TAREA 2: Hola Docker
+# =========================================================
+# El Dockerfile más pequeño posible: dos líneas.
+#
+#   docker build -t hola-docker .
+#   docker run --rm hola-docker
+# =========================================================
+
+# Alpine Linux a secas, sin Node ni nada más.
+# Pesa unos 5 MB: es de las imágenes útiles más pequeñas que existen.
+FROM alpine
+
+# El comando que se ejecuta al arrancar el contenedor.
+#
+# El enunciado pide primero "Hola Docker" y luego cambiarlo.
+# Dejo puesto el segundo mensaje, que es el estado final.
+CMD ["echo", "Hola desde mi primera imagen"]
+
+# ---------------------------------------------------------
+# SOBRE LA CACHÉ (lo que pide verificar el enunciado):
+#
+# Docker construye la imagen por CAPAS: cada instrucción del
+# Dockerfile genera una capa y Docker las guarda.
+#
+# Al reconstruir, reutiliza las capas cuya instrucción no ha
+# cambiado. Como aquí solo he tocado el CMD, la capa del
+# "FROM alpine" sale como "CACHED" en el output del build
+# y no se vuelve a descargar Alpine.
+#
+# Esta es también la razón del orden del Dockerfile de la tarea 3:
+# lo que menos cambia va arriba, para aprovechar la caché al máximo.
+# ---------------------------------------------------------
