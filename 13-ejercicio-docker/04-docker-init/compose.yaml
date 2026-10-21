@@ -1,0 +1,70 @@
+# =========================================================
+# TAREA 4: compose.yaml generado por `docker init`
+# =========================================================
+# Docker Compose sirve para arrancar la app con UN solo comando,
+# sin tener que acordarse de todos los flags de docker run.
+#
+#   docker compose up --build
+#   docker compose down
+#
+# Es el equivalente a escribir a mano:
+#   docker build -t 04-docker-init . && docker run -p 3000:3000 ...
+#
+# Su verdadera utilidad aparece cuando la app necesita varios
+# servicios (una base de datos, un Redis...): los declaras todos
+# aquí y Compose los levanta juntos y conectados entre sí.
+# =========================================================
+
+services:
+  # "server" es el nombre del servicio. También es el nombre de red
+  # con el que otros contenedores podrían llamarle (http://server:3000).
+  server:
+    # build: . -> construye la imagen con el Dockerfile de esta carpeta
+    build:
+      context: .
+
+    environment:
+      NODE_ENV: production
+
+    # ports: "fuera:dentro"
+    # 3000:3000 -> el puerto 3000 de tu ordenador va al 3000 del
+    # contenedor. Si tuvieras el 3000 ocupado, pondrías "3001:3000".
+    ports:
+      - 3000:3000
+
+# ---------------------------------------------------------
+# docker init deja comentado un ejemplo de base de datos.
+# Lo dejo tal cual para ver cómo sería con dos servicios:
+#
+#   depends_on hace que Compose arranque primero la base de datos
+#   y espere a que esté sana antes de levantar el servidor.
+#
+#   El volumen "db-data" es lo que hace que los datos sobrevivan
+#   a un docker compose down (misma idea que la tarea 6).
+# ---------------------------------------------------------
+# depends_on:
+#   db:
+#     condition: service_healthy
+# db:
+#   image: postgres
+#   restart: always
+#   user: postgres
+#   secrets:
+#     - db-password
+#   volumes:
+#     - db-data:/var/lib/postgresql/data
+#   environment:
+#     - POSTGRES_DB=example
+#     - POSTGRES_PASSWORD_FILE=/run/secrets/db-password
+#   expose:
+#     - 5432
+#   healthcheck:
+#     test: ["CMD", "pg_isready"]
+#     interval: 10s
+#     timeout: 5s
+#     retries: 5
+# volumes:
+#   db-data:
+# secrets:
+#   db-password:
+#     file: db/password.txt
