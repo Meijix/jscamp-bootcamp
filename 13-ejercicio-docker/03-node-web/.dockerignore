@@ -1,0 +1,49 @@
+# =========================================================
+# .dockerignore
+# =========================================================
+# Funciona igual que un .gitignore, pero para Docker.
+#
+# Antes de construir, Docker empaqueta toda la carpeta y se la
+# manda al motor: a eso se le llama "contexto de build".
+# Todo lo que aparezca aquí NO se envía.
+#
+# Sirve para tres cosas:
+#   1. VELOCIDAD: sin esto, un node_modules de 300 MB se copiaría
+#      entero en cada build, aunque luego no se use.
+#   2. SEGURIDAD: evita que un .env con contraseñas acabe metido
+#      dentro de la imagen (y de ahí, publicado en un registry).
+#   3. CACHÉ: si un archivo ignorado cambia, no invalida la caché.
+# =========================================================
+
+# Las dependencias se instalan DENTRO de la imagen con npm ci.
+# Copiar las de tu máquina sería, además de lento, un error:
+# pueden estar compiladas para macOS y la imagen es Linux.
+node_modules
+
+# Historial de git: no aporta nada a la app y puede pesar mucho
+.git
+.gitignore
+
+# Documentación
+*.md
+
+# ⚠️ Lo más importante: variables de entorno con secretos.
+# Las variables se pasan al EJECUTAR (-e o --env-file), nunca
+# se hornean dentro de la imagen.
+.env
+.env.*
+
+# Archivos que crea macOS en cada carpeta
+.DS_Store
+
+# Configuración del editor
+.vscode
+
+# Salidas de build y logs
+dist
+*.log
+npm-debug.log*
+
+# El propio Dockerfile no hace falta dentro de la imagen
+Dockerfile
+.dockerignore
