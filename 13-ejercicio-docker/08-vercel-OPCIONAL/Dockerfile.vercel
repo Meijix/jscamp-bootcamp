@@ -1,0 +1,62 @@
+# =========================================================
+# TAREA 8 (OPCIONAL): Despliegue en Vercel con un Dockerfile
+# =========================================================
+# ⚠️ El nombre del archivo importa: tiene que ser exactamente
+# "Dockerfile.vercel". Es el nombre que busca Vercel para saber
+# que quieres desplegar con Docker en vez de con su detección
+# automática de framework.
+#
+# Probarlo en local:
+#   docker build -f Dockerfile.vercel -t midu-vercel .
+#   docker run --rm -p 8080:80 -e PORT=80 --name midu-vercel midu-vercel
+#   curl http://localhost:8080/
+#
+# (El -f indica el nombre del Dockerfile, porque no se llama
+# "Dockerfile" a secas.)
+# =========================================================
+
+# =========================================================
+# ETAPA 1: builder — compilar el binario de Go
+# =========================================================
+FROM golang:1.24-alpine AS builder
+
+WORKDIR /app
+
+COPY . .
+
+# ---------------------------------------------------------
+# Go COMPILA a un único archivo binario que ya lleva todo dentro
+# (no necesita ningún runtime instalado para ejecutarse).
+#
+# Eso hace que Go y los multi-stage se lleven de maravilla: la
+# imagen de golang pesa unos 350 MB (trae el compilador entero),
+# pero el binario resultante son unos pocos MB.
+#
+# -o /server = deja el binario en la ruta /server
+# ---------------------------------------------------------
+RUN go build -o /server main.go
+
+# =========================================================
+# ETAPA 2: runner — solo el binario
+# =========================================================
+# Alpine pelado: unos 5 MB, sin Go ni nada más.
+FROM alpine:3.20
+
+# Me traigo ÚNICAMENTE el binario compilado.
+# Ni el código fuente, ni el compilador de Go, ni las herramientas.
+COPY --from=builder /server /server
+
+# El servidor lee el puerto de la variable PORT (o usa el 80).
+# Vercel asigna el puerto por esa variable, por eso main.go la lee.
+EXPOSE 80
+
+CMD ["/server"]
+
+# ---------------------------------------------------------
+# Comparativa del tamaño final:
+#   Sin multi-stage (solo golang:1.24-alpine)  -> ~350 MB
+#   Con multi-stage (alpine + binario)         -> ~12 MB
+#
+# Casi 30 veces menos. Y además la imagen final ni siquiera tiene
+# un compilador dentro, así que hay muchísimo menos que atacar.
+# ---------------------------------------------------------
