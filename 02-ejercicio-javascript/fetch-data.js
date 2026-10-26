@@ -88,7 +88,9 @@ export function mostrarEmpleos(empleos) {
    Nada más cargar la página: pido los datos y los pinto todos.
    ========================================================= */
 cargarEmpleos()
-  .then((empleos) => mostrarEmpleos(empleos))
+  // Pasamos la función directamente: envolverla en otra flecha era repetir lo mismo. Lo que hiciste esta bien, te queremos mostrar esta alternativa, hace lo mismo :)
+  // .then((empleos) => mostrarEmpleos(empleos))
+  .then(mostrarEmpleos)
   .catch((error) => {
     console.error('Error cargando los empleos:', error)
     listaEmpleos.innerHTML = '<li><p>Hubo un error al cargar los empleos.</p></li>'
