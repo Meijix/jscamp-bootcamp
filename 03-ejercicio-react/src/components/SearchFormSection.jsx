@@ -21,10 +21,29 @@ export function SearchFormSection({ initialText, filters, onTextChange, onFilter
   const timeoutRef = useRef(null)
 
   /*
+    Último texto que ya le pasamos al padre.
+    Arranca con initialText porque el padre ya conoce ese valor
+    (viene de la URL), así el primer render no cuenta como "cambio".
+  */
+  const textoEnviadoRef = useRef(initialText ?? '')
+
+  /*
     Este useEffect es el que hace el debounce.
     Se ejecuta cada vez que cambia searchText.
   */
   useEffect(() => {
+    /*
+      Si el texto es el mismo que el padre ya tiene, no hay nada que avisar.
+      Sin esta comprobación, al montar (o al recargar .../search?page=2),
+      el timer avisaba con el texto inicial, el padre hacía setCurrentPage(1)
+      y se perdía el número de página que venía en la URL.
+      El chequeo también cubre volver a escribir exactamente lo mismo.
+    */
+    // if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    // porque si no hay cambios tampoco hay timer que cancelar.
+    if (textoEnviadoRef.current === searchText) return
+    textoEnviadoRef.current = searchText
+
     // 1. Cancelo el temporizador anterior (si el usuario sigue escribiendo)
     if (timeoutRef.current) clearTimeout(timeoutRef.current)
 
