@@ -111,6 +111,13 @@ function formatearTamano(bytes) {
    devuelven promesas (por eso los importo de fs/promises).
    ========================================================= */
 async function listarDirectorio() {
+  if (soloArchivos && soloCarpetas) {
+    // console.log('⚠️  Has usado --files y --folders a la vez, así que no queda nada que mostrar.')
+    console.error('⚠️  Has usado --files y --folders a la vez, así que no queda nada que mostrar.')
+    process.exitCode = 1
+    return
+  }
+
   let nombres
 
   /* -------------------------------------------------------
@@ -209,17 +216,6 @@ async function listarDirectorio() {
 
   if (soloCarpetas) {
     resultado = resultado.filter((elemento) => elemento.esCarpeta)
-  }
-
-  /*
-    Si el usuario pone los dos flags a la vez (--files --folders),
-    el primer filtro quita las carpetas y el segundo quita los
-    archivos: no queda nada. Se lo aviso en vez de mostrar una
-    lista vacía sin explicación.
-  */
-  if (soloArchivos && soloCarpetas) {
-    console.log('⚠️  Has usado --files y --folders a la vez, así que no queda nada que mostrar.')
-    return
   }
 
   /* -------------------------------------------------------
