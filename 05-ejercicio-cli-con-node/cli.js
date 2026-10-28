@@ -54,6 +54,27 @@ const rutas = argumentos.filter((argumento) => !argumento.startsWith('--'))
 */
 const directorio = rutas[0] || '.'
 
+// Antes de hacer cualquier operación, debemos comprobar los permisos.
+// Voy a dejar el código que dejaste debajo para que te quede de referencia.
+// La manera correcta de hacerlo es esta, por medio de node.
+//
+// OJO: process.permission solo existe cuando Node arranca con --permission.
+// Sin el flag vale undefined, así que la comprobación original entraba
+// siempre por el error y `node cli.js .` no listaba nada. Ahora el permiso
+// solo se exige cuando el modelo está activo.
+const isReadAvailable =
+  process.permission === undefined ||
+  process.permission.has('fs.read', directorio)
+
+if (!isReadAvailable) {
+  console.error('❌ No tienes permisos para leer este directorio.')
+  console.error('   Node se ha ejecutado con --permission, que bloquea el acceso a archivos.')
+  console.error('   Vuelve a lanzarlo habilitando la lectura:')
+  console.error(`   node --permission --allow-fs-read=${directorio} cli.js ${directorio}`)
+
+  process.exit(1)
+}
+
 // Compruebo qué flags ha puesto el usuario. includes() devuelve true/false.
 const ordenarAscendente = flags.includes('--asc')
 const ordenarDescendente = flags.includes('--desc')
@@ -90,6 +111,13 @@ function formatearTamano(bytes) {
    devuelven promesas (por eso los importo de fs/promises).
    ========================================================= */
 async function listarDirectorio() {
+  if (soloArchivos && soloCarpetas) {
+    // console.log('⚠️  Has usado --files y --folders a la vez, así que no queda nada que mostrar.')
+    console.error('⚠️  Has usado --files y --folders a la vez, así que no queda nada que mostrar.')
+    process.exitCode = 1
+    return
+  }
+
   let nombres
 
   /* -------------------------------------------------------
@@ -160,13 +188,17 @@ async function listarDirectorio() {
         stat() da la "ficha técnica" de un archivo: tamaño, fechas,
         permisos y si es carpeta o no.
       */
-      const informacion = await stat(rutaCompleta)
+      try {
+        const informacion = await stat(rutaCompleta)
 
-      return {
-        nombre,
-        // isDirectory() es un método, no una propiedad: lleva paréntesis
-        esCarpeta: informacion.isDirectory(),
-        tamano: informacion.size,
+        return {
+          nombre,
+          // isDirectory() es un método, no una propiedad: lleva paréntesis
+          esCarpeta: informacion.isDirectory(),
+          tamano: informacion.size,
+        }
+      } catch (error) {
+        return { nombre, esCarpeta: false, tamano: null, error: error.code }
       }
     })
   )
@@ -184,17 +216,6 @@ async function listarDirectorio() {
 
   if (soloCarpetas) {
     resultado = resultado.filter((elemento) => elemento.esCarpeta)
-  }
-
-  /*
-    Si el usuario pone los dos flags a la vez (--files --folders),
-    el primer filtro quita las carpetas y el segundo quita los
-    archivos: no queda nada. Se lo aviso en vez de mostrar una
-    lista vacía sin explicación.
-  */
-  if (soloArchivos && soloCarpetas) {
-    console.log('⚠️  Has usado --files y --folders a la vez, así que no queda nada que mostrar.')
-    return
   }
 
   /* -------------------------------------------------------
@@ -228,11 +249,26 @@ async function listarDirectorio() {
      ------------------------------------------------------- */
 
   if (resultado.length === 0) {
-    console.log('(La carpeta está vacía)')
+    // console.log('(La carpeta está vacía)')
+    if (soloArchivos || soloCarpetas) {
+      console.log(`(No hay ${soloArchivos ? 'archivos' : 'carpetas'} en la carpeta)`)
+    } else {
+      console.log('(La carpeta está vacía)')
+    }
     return
   }
 
   resultado.forEach((elemento) => {
+    /*
+      Si el elemento no se pudo leer, lo muestro igual con un aviso:
+      esconderlo sería peor (el usuario ni se entera de que existe) y,
+      además, acá formatearTamano(null) reventaría.
+    */
+    if (elemento.error) {
+      console.log(`⚠️ ${elemento.nombre.padEnd(25)} no se pudo leer (${elemento.error})`)
+      return
+    }
+
     // Icono según el tipo
     const icono = elemento.esCarpeta ? '📁' : '📄'
 
