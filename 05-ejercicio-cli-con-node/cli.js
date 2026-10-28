@@ -54,6 +54,27 @@ const rutas = argumentos.filter((argumento) => !argumento.startsWith('--'))
 */
 const directorio = rutas[0] || '.'
 
+// Antes de hacer cualquier operación, debemos comprobar los permisos.
+// Voy a dejar el código que dejaste debajo para que te quede de referencia.
+// La manera correcta de hacerlo es esta, por medio de node.
+//
+// OJO: process.permission solo existe cuando Node arranca con --permission.
+// Sin el flag vale undefined, así que la comprobación original entraba
+// siempre por el error y `node cli.js .` no listaba nada. Ahora el permiso
+// solo se exige cuando el modelo está activo.
+const isReadAvailable =
+  process.permission === undefined ||
+  process.permission.has('fs.read', directorio)
+
+if (!isReadAvailable) {
+  console.error('❌ No tienes permisos para leer este directorio.')
+  console.error('   Node se ha ejecutado con --permission, que bloquea el acceso a archivos.')
+  console.error('   Vuelve a lanzarlo habilitando la lectura:')
+  console.error(`   node --permission --allow-fs-read=${directorio} cli.js ${directorio}`)
+
+  process.exit(1)
+}
+
 // Compruebo qué flags ha puesto el usuario. includes() devuelve true/false.
 const ordenarAscendente = flags.includes('--asc')
 const ordenarDescendente = flags.includes('--desc')
