@@ -7,7 +7,7 @@ export function HomePage () {
     event.preventDefault()
     const formData = new FormData(event.target)
     const searchTerm = formData.get('search')
-    
+
     const url = searchTerm
       ? `/search?text=${encodeURIComponent(searchTerm)}`
       : '/search'
@@ -18,7 +18,21 @@ export function HomePage () {
   return (
     <main>
       <section>
-        <img src="./background.webp" width="200" />
+        {/*
+          Dos cosas acá:
+          1. La ruta empieza con "/" en vez de "./". Con React Router
+             el navegador ya no está en la raíz del proyecto: si algún
+             día esta home viviera en una ruta anidada, "./background.webp"
+             se resolvería contra la URL (/search/background.webp) y la
+             imagen no cargaría. Con barra inicial va siempre a /public.
+
+          2. El alt. Sin alt, el lector de pantalla lee el nombre del
+             archivo. Como es una ilustración decorativa (al lado hay un
+             h1 que ya dice lo mismo), el alt correcto es vacío: así el
+             lector la salta en vez de leer algo inventado.
+        */}
+        {/* <img src="./background.webp" width="200" /> */}
+        <img src="/background.webp" width="200" alt="" />
 
         <h1>Encuentra el trabajo de tus sueños</h1>
 

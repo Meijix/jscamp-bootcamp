@@ -7,36 +7,25 @@ export function Pagination({ currentPage = 1, totalPages = 10, onPageChange }) {
   const isFirstPage = currentPage === 1
   const isLastPage = currentPage === totalPages
 
-  const stylePrevButton = isFirstPage ? { pointerEvents: 'none', opacity: 0.5 } : {}
-  const styleNextButton = isLastPage ? { pointerEvents: 'none', opacity: 0.5 } : {}
-
-  const handlePrevClick = (event) => {
-    event.preventDefault()
+  const handlePrevClick = () => {
+    // event.preventDefault() -> con <button> ya no hace falta: un botón no navega a ningún lado
     if (isFirstPage === false) {
       onPageChange(currentPage - 1)
     }
   }
 
-  const handleNextClick = (event) => {
-    event.preventDefault()
+  const handleNextClick = () => {
+    // event.preventDefault() -> tampoco hace falta acá
     if (isLastPage === false) {
       onPageChange(currentPage + 1)
     }
   }
 
-  const handleChangePage = (event) => {
-    event.preventDefault()
-    const page = Number(event.target.dataset.page)
-
+  const handlePageClick = (page) => () => {
+    // event.preventDefault() -> tampoco hace falta
     if (page !== currentPage) {
       onPageChange(page)
     }
-  }
-
-  const buildPageUrl = (page) => {
-    const url = new URL(window.location)
-    url.searchParams.set('page', page)
-    return `${url.pathname}?${url.searchParams.toString()}`
   }
 
   return (
@@ -51,11 +40,9 @@ export function Pagination({ currentPage = 1, totalPages = 10, onPageChange }) {
            que es el selector recomendado.
     */
     <nav className={styles.pagination} aria-label="Paginación de resultados">
-      {/* Igual aquí: sin aria-label, un enlace que solo tiene un icono
-          SVG dentro no tiene ningún texto con el que identificarlo */}
-      <a
-        href={buildPageUrl(currentPage - 1)}
-        style={stylePrevButton}
+      <button
+        type="button"
+        disabled={isFirstPage}
         onClick={handlePrevClick}
         aria-label="Página anterior"
       >
@@ -72,23 +59,24 @@ export function Pagination({ currentPage = 1, totalPages = 10, onPageChange }) {
           <path stroke="none" d="M0 0h24v24H0z" fill="none" />
           <path d="M15 6l-6 6l6 6" />
         </svg>
-      </a>
+      </button>
 
       {pages.map((page) => (
-        <a
+        <button
           key={page}
-          data-page={page}
-          href={buildPageUrl(page)}
+          type="button"
+          /* data-page={page} -> ya no hace falta: el número viene por cierre */
           className={currentPage === page ? styles.isActive : ''}
-          onClick={handleChangePage}
+          onClick={handlePageClick(page)}
+          aria-current={currentPage === page ? 'page' : undefined}
         >
           {page}
-        </a>
+        </button>
       ))}
 
-      <a
-        href={buildPageUrl(currentPage + 1)}
-        style={styleNextButton}
+      <button
+        type="button"
+        disabled={isLastPage}
         onClick={handleNextClick}
         aria-label="Página siguiente"
       >
@@ -106,7 +94,7 @@ export function Pagination({ currentPage = 1, totalPages = 10, onPageChange }) {
           <path stroke="none" d="M0 0h24v24H0z" fill="none" />
           <path d="M9 6l6 6l-6 6" />
         </svg>
-      </a>
+      </button>
     </nav>
   )
 }

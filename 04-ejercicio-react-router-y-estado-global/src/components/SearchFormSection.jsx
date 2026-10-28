@@ -23,23 +23,28 @@ export function SearchFormSection({ initialText, filters, onTextChange, onFilter
   const timeoutRef = useRef(null)
 
   /*
-    Guardo si es el primer render.
-    Sin esto, al entrar con /search?text=react el efecto se dispararía
-    nada más montar y avisaría al padre con el mismo texto que ya
-    tiene, provocando una petición extra e inútil.
+    Esto es lo mismo que te comenté en la corrección del ejercicio 3
+    Agrego igual todos los cambios que ya hicimos para que quede registrado
   */
-  const esPrimerRender = useRef(true)
+  const textoEnviadoRef = useRef(initialText ?? '')
 
   useEffect(() => {
-    if (esPrimerRender.current) {
-      esPrimerRender.current = false
-      return
+    const textoDelPadre = initialText ?? ''
+
+    if (textoDelPadre !== textoEnviadoRef.current) {
+      textoEnviadoRef.current = textoDelPadre
+      setSearchText(textoDelPadre)
     }
+  }, [initialText])
+
+  useEffect(() => {
+    if (searchText === textoEnviadoRef.current) return
 
     // Cancelo la cuenta atrás anterior: el usuario sigue escribiendo
     if (timeoutRef.current) clearTimeout(timeoutRef.current)
 
     timeoutRef.current = setTimeout(() => {
+      textoEnviadoRef.current = searchText
       onTextChange(searchText)
     }, 400)
 
@@ -48,10 +53,7 @@ export function SearchFormSection({ initialText, filters, onTextChange, onFilter
 
   const handleTextChange = (event) => setSearchText(event.target.value)
 
-  const handleClearInput = (event) => {
-    event.preventDefault()
-    setSearchText('')
-  }
+  const handleClearInput = () => setSearchText('')
 
   /*
     Un único manejador para los tres selects.
