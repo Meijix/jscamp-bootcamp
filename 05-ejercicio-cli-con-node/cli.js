@@ -253,7 +253,12 @@ async function listarDirectorio() {
      ------------------------------------------------------- */
 
   if (resultado.length === 0) {
-    console.log('(La carpeta está vacía)')
+    // console.log('(La carpeta está vacía)')
+    if (soloArchivos || soloCarpetas) {
+      console.log(`(No hay ${soloArchivos ? 'archivos' : 'carpetas'} en la carpeta)`)
+    } else {
+      console.log('(La carpeta está vacía)')
+    }
     return
   }
 
