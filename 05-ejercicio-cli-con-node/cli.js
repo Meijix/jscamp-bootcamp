@@ -181,13 +181,17 @@ async function listarDirectorio() {
         stat() da la "ficha técnica" de un archivo: tamaño, fechas,
         permisos y si es carpeta o no.
       */
-      const informacion = await stat(rutaCompleta)
+      try {
+        const informacion = await stat(rutaCompleta)
 
-      return {
-        nombre,
-        // isDirectory() es un método, no una propiedad: lleva paréntesis
-        esCarpeta: informacion.isDirectory(),
-        tamano: informacion.size,
+        return {
+          nombre,
+          // isDirectory() es un método, no una propiedad: lleva paréntesis
+          esCarpeta: informacion.isDirectory(),
+          tamano: informacion.size,
+        }
+      } catch (error) {
+        return { nombre, esCarpeta: false, tamano: null, error: error.code }
       }
     })
   )
@@ -254,6 +258,16 @@ async function listarDirectorio() {
   }
 
   resultado.forEach((elemento) => {
+    /*
+      Si el elemento no se pudo leer, lo muestro igual con un aviso:
+      esconderlo sería peor (el usuario ni se entera de que existe) y,
+      además, acá formatearTamano(null) reventaría.
+    */
+    if (elemento.error) {
+      console.log(`⚠️ ${elemento.nombre.padEnd(25)} no se pudo leer (${elemento.error})`)
+      return
+    }
+
     // Icono según el tipo
     const icono = elemento.esCarpeta ? '📁' : '📄'
 
