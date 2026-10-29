@@ -115,6 +115,30 @@ function enviarJSON(res, statusCode, datos) {
   res.end(JSON.stringify(datos))
 }
 
+/* Los query params siempre llegan como texto (o null si no
+   vienen), así que hay que convertirlos y, sobre todo, comprobar
+   que la conversión haya salido bien.
+
+   Number('abc') no lanza ningún error: devuelve NaN. Si no miro
+   eso, el filtro compara con NaN, no coincide con nadie y la API
+   responde 200 con una lista vacía.
+
+   Devuelvo un objeto con "valor" o con "error" para que quien
+   llama decida qué responder.
+*/
+function leerNumero(texto, { entero = false } = {}) {
+  // No vino el parámetro (o vino vacío): no hay nada que filtrar
+  if (texto === null || texto === '') return { valor: null }
+
+  const numero = Number(texto)
+
+  const esValido = entero ? Number.isInteger(numero) : Number.isFinite(numero)
+
+  if (!esValido || numero < 0) return { error: true }
+
+  return { valor: numero }
+}
+
 /* =========================================================
    EL SERVIDOR
    =========================================================
@@ -162,6 +186,35 @@ const server = createServer(async (req, res) => {
     */
     let resultado = [...users]
 
+    /* Los valido todos antes de filtrar: si alguno viene mal,
+       corto con un 400 y no devuelvo una lista a medias.
+
+       limit y offset tienen que ser enteros; minAge y maxAge
+       aceptan decimales (25.5 es una edad válida aunque no sea
+       lo habitual).
+       ------------------------------------------------------- */
+    const parametrosNumericos = [
+      { nombre: 'minAge', entero: false },
+      { nombre: 'maxAge', entero: false },
+      { nombre: 'limit', entero: true },
+      { nombre: 'offset', entero: true },
+    ]
+
+    // Guardo cada valor ya convertido (o null si no vino)
+    const numeros = {}
+
+    for (const { nombre, entero } of parametrosNumericos) {
+      const { valor, error } = leerNumero(query.get(nombre), { entero })
+
+      if (error) {
+        return enviarJSON(res, 400, {
+          error: `El parámetro "${nombre}" debe ser un número ${entero ? 'entero ' : ''}mayor o igual a 0`,
+        })
+      }
+
+      numeros[nombre] = valor
+    }
+
     // --- Filtro por nombre ---
     const name = query.get('name')
     if (name) {
@@ -174,20 +227,21 @@ const server = createServer(async (req, res) => {
     }
 
     // --- Filtro por edad mínima ---
-    const minAge = query.get('minAge')
-    if (minAge) {
+    if (numeros.minAge !== null) {
       /*
-        Number() convierte el texto "25" en el número 25.
-        Sin esto compararía texto con número y daría resultados raros
-        (en JS, '9' > '10' es true porque compara letra a letra).
+        La conversión ya la hizo leerNumero, así que acá comparo
+        número con número (ya no hay riesgo de comparar el texto
+        '9' con el '10').
+
+        La condición es !== null y no `if (minAge)`, porque el texto
+        "0" es verdadero pero Number('0') es 0, y ese 0 se perdía.
       */
-      resultado = resultado.filter((user) => user.age >= Number(minAge))
+      resultado = resultado.filter((user) => user.age >= numeros.minAge)
     }
 
     // --- Filtro por edad máxima ---
-    const maxAge = query.get('maxAge')
-    if (maxAge) {
-      resultado = resultado.filter((user) => user.age <= Number(maxAge))
+    if (numeros.maxAge !== null) {
+      resultado = resultado.filter((user) => user.age <= numeros.maxAge)
     }
 
     /*
@@ -196,13 +250,12 @@ const server = createServer(async (req, res) => {
       Si cortara antes, estaría paginando sobre la lista sin filtrar
       y saldrían resultados incorrectos.
     */
-    const limit = query.get('limit')
-    const offset = query.get('offset')
-
-    if (limit || offset) {
-      // Si solo me dan uno de los dos, pongo un valor sensato para el otro
-      const desde = Number(offset) || 0
-      const cuantos = Number(limit) || resultado.length
+    if (numeros.limit !== null || numeros.offset !== null) {
+      /*
+        Si solo me dan uno de los dos, pongo un valor sensato para el otro.
+      */
+      const desde = numeros.offset ?? 0
+      const cuantos = numeros.limit ?? resultado.length
 
       // slice(desde, hasta) -> corta un trozo sin tocar el original
       resultado = resultado.slice(desde, desde + cuantos)
