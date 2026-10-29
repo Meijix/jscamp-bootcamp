@@ -65,18 +65,75 @@ const users = [
    Envuelvo todo en una promesa para poder usar await y que se lea
    como código normal de arriba a abajo.
    ========================================================= */
+
+/*
+  Tope de tamaño del body. Sin esto, el string crece tanto como el
+  cliente quiera: mandar un JSON de 100 MB es tan fácil como mandar uno
+  de 10 bytes, y esa memoria la paga el servidor. Con un tope, el peor
+  caso es un rechazo.
+
+  1 MB es holgado para un usuario (nombre y edad). Acá no hay archivos.
+
+  Esto no es requerimiento de la letra, lo hacemos para que te quede de
+  referencia.
+*/
+const TAMANO_MAXIMO_BODY = 1024 * 1024
+
 function json(req) {
   return new Promise((resolve, reject) => {
-    let body = ''
+    /*
+      Guardo los trozos CRUDOS (Buffer), no texto ya convertido.
 
-    // Voy pegando cada trozo al string
+      Ojo, que esto no es un detalle: un carácter como 'í' ocupa 2 bytes
+      en UTF-8 y '😀' ocupa 4. Si un trozo termina justo en la mitad de
+      un carácter, cada chunk.toString() por separado lee medio carácter
+      y lo reemplaza por '�'. El resultado: "Lucía" se guarda como
+      "Luc��a". Con 'chunk.toString()' por trozo no hay forma de
+      arreglarlo, porque el pedazo que falta todavía no llegó.
+
+      Guardando los Buffers y convirtiendo una sola vez al final, los
+      bytes del carácter vuelven a estar juntos y se decodifica bien.
+    */
+    const trozos = []
+    let bytes = 0
+    let rechazado = false
+
+    // Voy juntando cada trozo
     req.on('data', (chunk) => {
-      body += chunk.toString()
+      /*
+        Si ya rechacé, sigo dejando pasar los trozos pero sin guardarlos.
+        Si cortara la escucha acá, Node dejaría de consumir lo que manda
+        el cliente y el socket quedaría trabado con mi respuesta de error
+        esperando.
+      */
+      if (rechazado) return
+
+      // chunk.length son BYTES (no caracteres): justo lo que necesito contar
+      bytes += chunk.length
+
+      if (bytes > TAMANO_MAXIMO_BODY) {
+        rechazado = true
+        trozos.length = 0 // por si acaso
+
+        /*
+          El error lleva su propio statusCode para que el endpoint pueda
+          responder 413 ("payload too large") y no el 400 genérico.
+        */
+        const error = new Error('El body es demasiado grande (máximo 1 MB)')
+        error.statusCode = 413
+        reject(error)
+        return
+      }
+
+      trozos.push(chunk)
     })
 
     // Cuando ya no llegan más trozos, intento convertirlo a objeto
     req.on('end', () => {
       try {
+        // Recién ahora junto todos los bytes y los leo como UTF-8
+        const body = Buffer.concat(trozos).toString('utf8')
+
         /*
           Si el body viene vacío, JSON.parse('') lanza error.
           Por eso devuelvo un objeto vacío en ese caso.
@@ -306,8 +363,7 @@ const server = createServer(async (req, res) => {
       // 201 = "Created". Es el código correcto al crear algo (no el 200)
       return enviarJSON(res, 201, nuevoUsuario)
     } catch (error) {
-      // Aquí caemos si el JSON venía mal escrito
-      return enviarJSON(res, 400, { error: error.message })
+      return enviarJSON(res, error.statusCode ?? 400, { error: error.message })
     }
   }
 
