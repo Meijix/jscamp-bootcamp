@@ -276,19 +276,28 @@ const server = createServer(async (req, res) => {
         Validación básica: nunca te fíes de lo que manda el cliente.
         Sin esto se podrían crear usuarios sin nombre o con la edad
         puesta como texto.
+
+        La comprobación anterior era `!body.name`, y un
+        nombre de tres espacios pasaba el filtro. trim() le saca los
+        espacios de los extremos, y si queda vacío es que no había
+        nombre de verdad. Guardo el nombre ya recortado.
       */
-      if (!body.name || typeof body.name !== 'string') {
+      const name = typeof body.name === 'string' ? body.name.trim() : ''
+
+      if (!name) {
         return enviarJSON(res, 400, { error: 'El campo "name" es obligatorio y debe ser texto' })
       }
 
-      if (typeof body.age !== 'number') {
-        return enviarJSON(res, 400, { error: 'El campo "age" es obligatorio y debe ser un número' })
+      if (!Number.isInteger(body.age) || body.age < 0) {
+        return enviarJSON(res, 400, {
+          error: 'El campo "age" es obligatorio y debe ser un número entero mayor o igual a 0',
+        })
       }
 
       const nuevoUsuario = {
         // randomUUID genera un id único tipo 'a1b2c3d4-e5f6-...'
         id: randomUUID(),
-        name: body.name,
+        name,
         age: body.age,
       }
 
