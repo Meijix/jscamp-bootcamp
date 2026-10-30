@@ -63,6 +63,31 @@ app.use((req, res) => {
 })
 
 /*
+  Los errores, también en JSON.
+
+  Este middleware tiene cuatro parámetros (error, req, res, next).
+  Esa firma es la forma que tiene Express de saber que es un
+  manejador de errores y no una ruta normal. Si le falta uno, no lo
+  reconoce y el error sigue de largo.
+*/
+app.use((error, req, res, next) => {
+  // Si ya se enviaron cabeceras, el error no se puede arreglar acá
+  if (res.headersSent) return next(error)
+
+  const status = error.status ?? error.statusCode ?? 500
+
+  /*
+    Un 5xx es un bug nuestro: al cliente le doy un mensaje genérico y el
+    detalle lo dejo en la consola del servidor, que es donde sí sirve.
+  */
+  if (status >= 500) console.error(error)
+
+  const mensaje = status >= 500 ? 'Error interno del servidor' : error.message
+
+  res.status(status).json({ error: mensaje })
+})
+
+/*
   El puerto sale del config.js.
   process.env.PORT tiene prioridad porque los servicios de hosting
   (Vercel, Render, Railway...) te asignan un puerto por esa variable
