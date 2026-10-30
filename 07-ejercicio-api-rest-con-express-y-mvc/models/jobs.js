@@ -22,6 +22,14 @@ import jobs from '../jobs.json' with { type: 'json' }
 import { randomUUID } from 'node:crypto'
 
 /*
+  Lee un campo de texto de un job sin confiar en que exista.
+
+  Por qué este helper? Porque a la lista se le puede colar un job sin
+  título.
+*/
+const textoDe = (valor) => String(valor ?? '').toLowerCase()
+
+/*
   Uso una clase con métodos ESTÁTICOS (static).
 
   "static" significa que el método pertenece a la CLASE, no a un
@@ -48,15 +56,19 @@ export class JobModel {
 
     // --- Filtro por título ---
     if (title) {
-      resultado = resultado.filter((job) => job.titulo.toLowerCase().includes(title.toLowerCase()))
+      /*
+        Antes era job.titulo.toLowerCase(). Si un solo job de la lista no
+        tenía título, esta línea lanzaba TypeError y el 500 dejaba la
+        búsqueda rota para todos los demás jobs también.
+      */
+      resultado = resultado.filter((job) => textoDe(job.titulo).includes(title.toLowerCase()))
     }
 
     // --- Búsqueda libre: mira en el título Y en la descripción ---
     if (text) {
       const texto = text.toLowerCase()
       resultado = resultado.filter(
-        (job) =>
-          job.titulo.toLowerCase().includes(texto) || job.descripcion.toLowerCase().includes(texto)
+        (job) => textoDe(job.titulo).includes(texto) || textoDe(job.descripcion).includes(texto)
       )
     }
 

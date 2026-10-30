@@ -15,36 +15,71 @@
 import { JobModel } from '../models/jobs.js'
 import { DEFAULTS } from '../config.js'
 
+/*
+  Los seis parámetros se esperan una sola vez.
+  Express convierte un parámetro repetido (?text=a&text=b) en un ARRAY,
+  y un array no tiene .toLowerCase(): el filtro reventaba con un
+  TypeError y un 500.
+*/
+const PARAMS_DE_UNA_SOLA_VEZ = ['text', 'title', 'level', 'technology', 'limit', 'offset']
+
+/*
+  Convierte un query param numérico a entero mayor o igual a 0.
+*/
+const aEnteroNoNegativo = (valor, valorPorDefecto) => {
+  if (valor === undefined || valor === '') return valorPorDefecto
+
+  const numero = Number(valor)
+
+  if (!Number.isInteger(numero) || numero < 0) return null
+
+  return numero
+}
+
 export class JobController {
   /**
    * GET /jobs
    */
   static getAll(req, res) {
     /*
+      Primero, que cada parámetro venga una sola vez.
+      Si viene repetido, ni siquiera intento usarlo: 400 con el nombre
+      del que está mal, así el cliente sabe qué corregir.
+    */
+    const repetidos = PARAMS_DE_UNA_SOLA_VEZ.filter((nombre) => Array.isArray(req.query[nombre]))
+
+    if (repetidos.length > 0) {
+      return res.status(400).json({
+        error: `El parámetro "${repetidos.join(', ')}" viene repetido: mandá un solo valor`,
+      })
+    }
+
+    /*
       req.query es un objeto con los parámetros de la URL.
       /jobs?text=react&limit=5  ->  { text: 'react', limit: '5' }
       Ojo: SIEMPRE llegan como texto, aunque parezcan números.
     */
-    const { text, title, level, technology, limit, offset } = req.query
+    const { text, title, level, technology } = req.query
 
-    const resultado = JobModel.getAll({
-      text,
-      title,
-      level,
-      technology,
-      /*
-        Aquí es donde se usa el config.js:
-        si el cliente no manda limit, uso el valor por defecto.
+    /*
+      Aquí es donde se usa el config.js:
+      si el cliente no manda limit, uso el valor por defecto.
 
-        Uso ?? (nullish coalescing) y no ||.
-        La diferencia importa: con "offset=0", el || vería el 0 como
-        falso y lo cambiaría por el valor por defecto. El ?? solo
-        sustituye si el valor es null o undefined, así que el 0 se
-        respeta. Es justo el bug clásico de la paginación.
-      */
-      limit: limit ?? DEFAULTS.LIMIT_PAGINATION,
-      offset: offset ?? DEFAULTS.LIMIT_OFFSET,
-    })
+      Y aquí también se validan: NaN, negativos e Infinity no son
+      "un límite raro", son un error del cliente y se responden 400.
+    */
+    const limit = aEnteroNoNegativo(req.query.limit, DEFAULTS.LIMIT_PAGINATION)
+    const offset = aEnteroNoNegativo(req.query.offset, DEFAULTS.LIMIT_OFFSET)
+
+    if (limit === null || offset === null) {
+      const nombre = limit === null ? 'limit' : 'offset'
+
+      return res.status(400).json({
+        error: `El parámetro "${nombre}" debe ser un número entero mayor o igual a 0`,
+      })
+    }
+
+    const resultado = JobModel.getAll({ text, title, level, technology, limit, offset })
 
     // res.json() ya pone la cabecera Content-Type y hace el stringify
     res.json(resultado)
