@@ -135,6 +135,40 @@ describe('GET /jobs', () => {
     assert.strictEqual(json.offset, 1)
     assert.strictEqual(json.data[0].id, 'd35b2c89-5d60-4f26-b19a-6cfb2f1a0f57')
   })
+
+  /*
+    Muy buen trabajo: quise agregar otros tests
+    para que el ejercicio sea más completo.
+  */
+  test('debe filtrar por texto en el título o la descripción', async () => {
+    const response = await fetch(`${BASE_URL}/jobs?text=devops`)
+    const json = await response.json()
+
+    assert.strictEqual(response.status, 200)
+
+    /*
+      Compruebo que devuelve algo, no solo el status: un filtro roto
+      también responde 200, con data vacía.
+    */
+    assert.ok(json.data.length > 0, 'debería encontrar al menos un job con "devops"')
+
+    const todosCoinciden = json.data.every((job) =>
+      `${job.titulo} ${job.descripcion ?? ''}`.toLowerCase().includes('devops')
+    )
+    assert.ok(todosCoinciden, 'todos los jobs deberían contener el texto buscado')
+  })
+
+  test('el total es el total de resultados, no el tamaño de la página', async () => {
+    const pagina = await fetch(`${BASE_URL}/jobs?limit=2`)
+    const jsonPagina = await pagina.json()
+
+    const completo = await fetch(`${BASE_URL}/jobs?limit=0`)
+    const jsonCompleto = await completo.json()
+
+    assert.strictEqual(jsonPagina.data.length, 2)
+    assert.strictEqual(jsonPagina.total, jsonCompleto.total)
+    assert.ok(jsonPagina.total > jsonPagina.data.length, 'el total debería ser mayor que la página')
+  })
 })
 
 /* =========================================================
