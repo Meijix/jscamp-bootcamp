@@ -37,6 +37,30 @@ type FilaContenido = {
   about: string
 }
 
+/*
+   Los filtros llegan de req.query, y ahí un parámetro repetido
+   no es un string: es un array.
+
+       /jobs?level=senior&level=junior   ->  { level: ['senior', 'junior'] }
+       /jobs?level[a]=senior             ->  { level: { a: 'senior' } }
+
+   Si ese array llegara tal cual a .all(), better-sqlite3 lo
+   interpretaría como si tuviera más placeholders de los que hay
+   en el SQL y lanzaría un RangeError. Y como el controlador es
+   async, Express no captura ese error: se convierte en un
+   unhandledRejection y el proceso del servidor se muere.
+
+   Con esta función el filtro raro se ignora (o se queda con el
+   primer valor) en vez de tirar abajo la API.
+   --------------------------------------------------------- */
+function unSoloValor(valor: unknown): string | undefined {
+  // Un array repetido se queda con su primer elemento
+  const primero = Array.isArray(valor) ? valor[0] : valor
+
+  // Cualquier cosa que no sea un string con contenido se descarta
+  return typeof primero === 'string' && primero !== '' ? primero : undefined
+}
+
 /* ---------------------------------------------------------
    AYUDANTE: convertir una fila de SQL en un objeto Job
    ---------------------------------------------------------
@@ -98,17 +122,25 @@ export class JobModel {
     // Los valores van aparte, en el mismo orden que los ?
     const valores: string[] = []
 
-    if (filters?.modality) {
+    /*
+      Limpio cada filtro antes de usarlo: un ?level repetido en la
+      URL llega como array y rompería la consulta.
+    */
+    const modalidad = unSoloValor(filters?.modality)
+    const nivel = unSoloValor(filters?.level)
+    const tecnologia = unSoloValor(filters?.tech)
+
+    if (modalidad) {
       sql += ' AND modality = ?'
-      valores.push(filters.modality)
+      valores.push(modalidad)
     }
 
-    if (filters?.level) {
+    if (nivel) {
       sql += ' AND level = ?'
-      valores.push(filters.level)
+      valores.push(nivel)
     }
 
-    if (filters?.tech) {
+    if (tecnologia) {
       /*
         La tecnología está en OTRA tabla, así que uso una subconsulta:
         "quédate con los jobs cuyo id aparezca en la lista de job_id
@@ -119,7 +151,7 @@ export class JobModel {
         Así se lee mejor.
       */
       sql += ' AND id IN (SELECT job_id FROM job_technologies WHERE technology = ?)'
-      valores.push(filters.tech)
+      valores.push(tecnologia)
     }
 
     /*
