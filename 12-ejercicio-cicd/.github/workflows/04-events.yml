@@ -71,7 +71,14 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           # El nombre de quien abrió la issue, para saludarle
           AUTHOR: ${{ github.event.issue.user.login }}
+          # El repositorio también va por env, no interpolado en el run.
+          # github.repository no lo controla un atacante (es el nombre
+          # del repo donde corre el workflow), pero si la regla del
+          # ejercicio es "ningún ${{ }} dentro de un run", se cumple
+          # siempre y no hay que ir decidiendo caso por caso cuál es
+          # de fiar.
+          REPO: ${{ github.repository }}
         run: |
           gh issue comment "$ISSUE_NUMBER" \
-            --repo "${{ github.repository }}" \
+            --repo "$REPO" \
             --body "¡Gracias por tu aporte, @$AUTHOR! 🙌 Le echaremos un vistazo lo antes posible."

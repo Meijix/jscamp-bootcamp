@@ -154,6 +154,10 @@ jobs:
         with:
           # matrix.node contiene el valor de esta combinación concreta
           node-version: ${{ matrix.node }}
+          # El enunciado de la Tarea 7 pide llamar a la action
+          # "sin caché": cada combinación SO + versión de Node tendría
+          # su propia entrada de caché y no la reutilizaría nunca.
+          cache: 'false'
 
       - name: Test
         working-directory: 12-ejercicio-cicd
