@@ -22,8 +22,16 @@
   margin-block: 2rem;
 }
 
-/* Los enlaces de dentro de la paginación */
-.pagination a {
+/* Los botones de dentro de la paginación */
+.pagination button {
+  /* Antes eran <a> y no hacía falta resetear nada. Un <button> trae
+     fondo, borde, padding y fuente del sistema por defecto, así que
+     los apago para que se vean igual que los enlaces de antes. */
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+
   /* flex + center = el número queda centrado dentro del cuadradito */
   display: flex;
   align-items: center;
@@ -31,7 +39,6 @@
   width: 2.5rem;
   height: 2.5rem;
 
-  text-decoration: none;
   color: var(--text-muted); /* variable que ya viene definida en index.css */
   border-radius: 0.375rem;
   cursor: pointer;
@@ -40,13 +47,25 @@
   transition: all 0.3s;
 }
 
-.pagination a:hover {
+/* :not(:disabled) = los botones apagados no reaccionan al mouse */
+.pagination button:hover:not(:disabled) {
   background-color: #fff;
 }
 
 /* :active = mientras se mantiene pulsado. Efecto "se hunde el botón" */
-.pagination a:active {
+.pagination button:active:not(:disabled) {
   transform: scale(0.9);
+}
+
+/*
+  Antes esta clase se llamaba isDisabled y simulaba el apagado con
+  pointer-events: none. Ahora el apagado es real (atributo disabled)
+  y se estiliza con la pseudo-clase :disabled, que solo aplica cuando
+  el botón está deshabilitado de verdad.
+*/
+.pagination button:disabled {
+  opacity: 0.4; /* se ve apagado = pista visual de "no disponible" */
+  cursor: default;
 }
 
 /* La página en la que estamos ahora mismo */
@@ -57,11 +76,4 @@
   /* pointer-events: none = ignora los clicks. No tiene sentido
      hacer click en la página en la que ya estás. */
   pointer-events: none;
-}
-
-/* Las flechas "anterior"/"siguiente" cuando no se pueden usar */
-.isDisabled {
-  opacity: 0.4; /* se ve apagado = pista visual de "no disponible" */
-  pointer-events: none;
-  cursor: default;
 }
