@@ -77,8 +77,21 @@ export function SearchPage() {
       } catch (error) {
         if (error.name === 'AbortError') return
         console.error('Error cargando empleos:', error)
+        /*
+          Faltaría un estado de error, como el que sí tiene Detail:
+          si la API falla, acá se ve "No se han encontrado empleos",
+          que es mentira (la búsqueda no se pudo hacer). Lo dejo
+          anotado y no lo implemento para no meter UI de más.
+        */
       } finally {
-        setLoading(false)
+        /*
+          Cuidado: el finally se ejecuta siempre, incluso cuando el
+          return del catch cortó por AbortError. Sin esta comprobación,
+          la petición cancelada apaga el loading de la petición nueva
+          que acaba de arrancar (escribir rápido en el buscador), y la
+          lista vieja se queda a la vista sin el "Cargando...".
+        */
+        if (!controller.signal.aborted) setLoading(false)
       }
     }
 
