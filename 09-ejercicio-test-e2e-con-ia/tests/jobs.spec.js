@@ -254,8 +254,12 @@ test('aparece la paginación y se puede pasar a la página siguiente', async ({ 
     .getByRole('heading', { level: 3 })
     .textContent()
 
-  // 3. Voy a la página siguiente
-  await paginacion.getByRole('link', { name: 'Página siguiente' }).click()
+  /*
+    3. Voy a la página siguiente.
+    Desde la corrección del ejercicio 04 las flechas son <button>
+    (con disabled real), ya no <a>, así que las busco por ese rol.
+  */
+  await paginacion.getByRole('button', { name: 'Página siguiente' }).click()
 
   // 4. La URL ahora lleva page=2
   await expect(page).toHaveURL(/page=2/)
