@@ -26,6 +26,28 @@ import { test, expect } from '@playwright/test'
       cosas a la vez.
    ========================================================= */
 
+/*
+  Lee el total del título "Resultados de búsqueda (34)".
+
+  ¿Por qué no escribo el 34 directamente? Porque es un dato de la API:
+  mañana puede haber 50 empleos y el test se rompería sin que yo haya
+  tocado nada. Comparando totales no me ato a los datos del servidor.
+*/
+async function totalDeResultados(page) {
+  /*
+    Espero a que la lista esté pintada: mientras la petición está en
+    vuelo, el título todavía muestra el total de la petición anterior
+    (o 0), así que leerlo antes me daría un número que no es el bueno.
+  */
+  await expect(page.getByRole('article').first()).toBeVisible()
+
+  const titulo = page.getByRole('heading', { level: 2, name: /Resultados de búsqueda/ })
+  const texto = (await titulo.textContent()) ?? ''
+
+  // Como el texto solo tiene un número, me quedo con la primera coincidencia
+  return Number(texto.match(/\d+/)?.[0] ?? 0)
+}
+
 /* =========================================================
    SEGUNDO EJERCICIO: navegación básica
    ========================================================= */
@@ -56,6 +78,14 @@ test('la página principal carga y muestra el buscador', async ({ page }) => {
    TERCER EJERCICIO: búsqueda de empleos
    ========================================================= */
 test('buscar por tecnología muestra resultados', async ({ page }) => {
+  /*
+    Antes de buscar apunto cuántos empleos hay sin filtro. Lo necesito
+    para comprobar después que la búsqueda ha filtrado de verdad y no
+    se ha limitado a navegar a /search.
+  */
+  await page.goto('/search')
+  const totalSinFiltro = await totalDeResultados(page)
+
   await page.goto('/')
 
   // 1. Escribo en el buscador
@@ -69,20 +99,27 @@ test('buscar por tecnología muestra resultados', async ({ page }) => {
   await page.getByRole('button', { name: 'Buscar' }).click()
 
   /*
-    3. Compruebo que hemos llegado a la página de resultados.
-    La expresión regular /\/search/ busca "/search" dentro de la URL
-    (no puedo comparar la URL entera porque lleva ?text=React detrás).
+    3. Compruebo que el término ha llegado a la URL.
+    Si el formulario se "comiera" el texto (un onSubmit mal hecho,
+    por ejemplo), el test se entera aquí y no más abajo.
   */
-  await expect(page).toHaveURL(/\/search/)
+  await expect(page).toHaveURL(/\?text=React/)
 
   /*
     4. Compruebo que aparecen resultados.
-    Aquí sí uso un selector CSS porque la tarjeta de empleo no tiene
-    un rol ARIA propio; es la excepción que comenta el enunciado.
-    Le pongo .first() porque hay varias y expect necesita UNA sola.
+    getByRole('article') encuentra las tarjetas por su ROL, no por su
+    clase CSS. Si mañana la lista se pinta con otro componente que
+    sigue siendo un <article>, el test sigue funcionando.
   */
-  const primerResultado = page.locator('.job-listing-card').first()
-  await expect(primerResultado).toBeVisible()
+  await expect(page.getByRole('article').first()).toBeVisible()
+
+  /*
+    5. Y compruebo que son MENOS que el catálogo completo.
+    Esto es lo que distingue un buscador que filtra de un buscador
+    que solo navega: con el filtro roto, el total seguiría siendo
+    el mismo que sin buscar y este expect fallaría.
+  */
+  expect(await totalDeResultados(page)).toBeLessThan(totalSinFiltro)
 })
 
 /* =========================================================
@@ -95,9 +132,15 @@ test('flujo completo: buscar, entrar al detalle, iniciar sesión y aplicar', asy
   await page.getByRole('button', { name: 'Buscar' }).click()
 
   // 2. Entro en el primer resultado (el título es un enlace)
-  const primerResultado = page.locator('.job-listing-card').first()
+  const primerResultado = page.getByRole('article').first()
   await expect(primerResultado).toBeVisible()
-  await primerResultado.getByRole('link').first().click()
+
+  /*
+    Sin .first(): dentro de una tarjeta hay UN solo enlace (el título).
+    Si algún día aparece un segundo, quiero que el test me avise con un
+    error de strict mode en vez de elegir uno por mí a escondidas.
+  */
+  await primerResultado.getByRole('link').click()
 
   /*
     3. Compruebo que estoy en el detalle.
@@ -145,16 +188,20 @@ test('el filtro de ubicación deja solo empleos remotos', async ({ page }) => {
   // Compruebo que la URL refleja el filtro (lo pedía el ejercicio 04)
   await expect(page).toHaveURL(/type=remoto/)
 
-  const tarjetas = page.locator('.job-listing-card')
+  const tarjetas = page.getByRole('article')
+
+  /*
+    .all() NO espera: devuelve las tarjetas que haya en este instante.
+    Por eso antes me aseguro de que la lista filtrada ya está pintada;
+    si la leyera con la lista vacía, el bucle de abajo no comprobaría
+    nada y el test pasaría sin haber verificado el filtro.
+  */
   await expect(tarjetas.first()).toBeVisible()
 
   /*
     Cada tarjeta lleva data-modalidad con su modalidad.
     Recorro TODAS las visibles y compruebo una a una que son remotas.
     Con mirar solo la primera, se me colaría un fallo en la segunda.
-
-    .all() devuelve un array con todos los elementos encontrados
-    en este momento.
   */
   for (const tarjeta of await tarjetas.all()) {
     await expect(tarjeta).toHaveAttribute('data-modalidad', 'remoto')
@@ -167,7 +214,7 @@ test('el filtro de nivel deja solo empleos senior', async ({ page }) => {
   await page.locator('#filter-experience-level').selectOption('senior')
   await expect(page).toHaveURL(/level=senior/)
 
-  const tarjetas = page.locator('.job-listing-card')
+  const tarjetas = page.getByRole('article')
   await expect(tarjetas.first()).toBeVisible()
 
   for (const tarjeta of await tarjetas.all()) {
@@ -180,12 +227,17 @@ test('el filtro de nivel deja solo empleos senior', async ({ page }) => {
    ========================================================= */
 test('aparece la paginación y se puede pasar a la página siguiente', async ({ page }) => {
   /*
-    Entro sin filtros: hay 34 empleos y se muestran de 5 en 5,
-    así que seguro que hay varias páginas.
+    Entro sin filtros: el catálogo tiene varias páginas (se muestran
+    de 5 en 5), así que aquí la paginación tiene que estar.
+
+    Aviso: hoy la app pinta la paginación siempre que haya algún
+    resultado, incluso con una sola página (total > 0 en Search.jsx).
+    O sea que este primer expect comprueba que existe, pero no que
+    haya más de una página.
   */
   await page.goto('/search')
 
-  await expect(page.locator('.job-listing-card').first()).toBeVisible()
+  await expect(page.getByRole('article').first()).toBeVisible()
 
   // 1. La paginación tiene que estar visible
   const paginacion = page.getByRole('navigation', { name: 'Paginación de resultados' })
@@ -196,7 +248,11 @@ test('aparece la paginación y se puede pasar a la página siguiente', async ({ 
     de página, para poder compararlo después.
     textContent() devuelve el texto que hay dentro del elemento.
   */
-  const tituloPagina1 = await page.locator('.job-listing-card h3').first().textContent()
+  const tituloPagina1 = await page
+    .getByRole('article')
+    .first()
+    .getByRole('heading', { level: 3 })
+    .textContent()
 
   // 3. Voy a la página siguiente
   await paginacion.getByRole('link', { name: 'Página siguiente' }).click()
@@ -211,7 +267,9 @@ test('aparece la paginación y se puede pasar a la página siguiente', async ({ 
     Esto es mucho mejor que comprobar solo que la URL cambió: la URL
     puede cambiar y los resultados quedarse igual por un bug.
   */
-  await expect(page.locator('.job-listing-card h3').first()).not.toHaveText(tituloPagina1 ?? '')
+  await expect(page.getByRole('article').first().getByRole('heading', { level: 3 })).not.toHaveText(
+    tituloPagina1 ?? ''
+  )
 })
 
 /* =========================================================
@@ -221,13 +279,13 @@ test('el detalle muestra la información del empleo y permite aplicar', async ({
   await page.goto('/search')
 
   // Entro en el primer empleo de la lista
-  const primerResultado = page.locator('.job-listing-card').first()
+  const primerResultado = page.getByRole('article').first()
   await expect(primerResultado).toBeVisible()
 
   // Me guardo el título para comprobar que el detalle es EL de este empleo
-  const titulo = await primerResultado.locator('h3').textContent()
+  const titulo = await primerResultado.getByRole('heading', { level: 3 }).textContent()
 
-  await primerResultado.getByRole('link').first().click()
+  await primerResultado.getByRole('link').click()
 
   await expect(page).toHaveURL(/\/job\//)
 

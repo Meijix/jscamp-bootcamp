@@ -40,11 +40,18 @@ export default defineConfig({
 
     /*
       trace guarda una grabación paso a paso (con capturas del DOM)
-      cuando un test falla y se reintenta. Se abre con
-      `npx playwright show-trace` y es LO MEJOR para depurar E2E:
-      ves exactamente qué había en pantalla en cada momento.
+      cuando un test falla. Se abre con `npx playwright show-trace` y es
+      LO MEJOR para depurar E2E: ves exactamente qué había en pantalla
+      en cada momento.
+
+      Ojo con 'on-first-retry': esa opción graba en el primer reintento,
+      y en local reintentos es 0, así que NUNCA dejaría un trace justo
+      cuando estás depurando. En local uso 'retain-on-failure', que graba
+      siempre y solo guarda el del test que falla. En CI sigo con
+      'on-first-retry' para no llenar el disco: allí los reintentos sí
+      existen.
     */
-    trace: 'on-first-retry',
+    trace: process.env.CI ? 'on-first-retry' : 'retain-on-failure',
   },
 
   /*
