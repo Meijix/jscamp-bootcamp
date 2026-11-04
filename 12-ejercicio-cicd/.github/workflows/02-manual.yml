@@ -87,9 +87,20 @@ jobs:
       # Dentro de un "if" NO hacen falta las llaves ${{ }}:
       # GitHub ya sabe que ahí va una expresión.
       #
-      # Ojo con un detalle: aunque el input sea de tipo boolean,
-      # al llegar aquí es el TEXTO "true" o "false". Por eso
-      # comparo con el string entre comillas y no con true a secas.
+      # Ojo con un detalle que confunde a casi todo el mundo: hay DOS
+      # formas de leer los inputs y NO se comportan igual.
+      #
+      #   inputs.dry_run               -> conserva el tipo: booleano
+      #   github.event.inputs.dry_run  -> SIEMPRE texto: "true"/"false"
+      #
+      # Por eso acá comparo contra el booleano `false` y no contra la
+      # cadena "false": `inputs.dry_run == false` compara dos booleanos.
+      #
+      # Y por eso el mismo if escrito con github.event.inputs sería un
+      # bug de verdad, no una cuestión de estilo: la cadena "false" no
+      # está vacía, así que en una condición cuenta como verdadera y el
+      # deploy se ejecutaría igual. No falla: hace lo contrario de lo
+      # que se pide.
       # ---------------------------------------------------------
       - name: Deploy
         if: inputs.dry_run == false
