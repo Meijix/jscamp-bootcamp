@@ -5,3 +5,6 @@
 ./09-ejercicio-test-e2e-con-ia/node_modules
 ./10-ejercicio-typescript/node_modules
 ./11-ejercicio-sql/node_modules
+
+# Los .env tienen configuración local y secretos: no van al repo
+.env
