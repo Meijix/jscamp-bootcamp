@@ -64,8 +64,22 @@ export function validateJob(input: unknown) {
   return jobSchema.safeParse(input)
 }
 
+/*
+  Esquema para el PATCH.
+
+  jobSchema.partial() hace opcionales los campos de primer nivel,
+  pero "data" seguiría siendo el objeto completo. Por eso un PATCH
+  con { data: { level: 'junior' } } daba 400 "data.technology
+  Required".
+
+  Con jobDataSchema.partial() dentro, "data" es parcial de verdad.
+*/
+export const jobPatchSchema = jobSchema.partial().extend({
+  data: jobDataSchema.partial().optional(),
+})
+
 export function validatePartialJob(input: unknown) {
-  return jobSchema.partial().safeParse(input)
+  return jobPatchSchema.safeParse(input)
 }
 
 // ================================
