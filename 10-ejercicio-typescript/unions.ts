@@ -67,7 +67,17 @@ export function displaySearchResults(result: SearchResult): void {
       Si intentara usar result.error aquí, daría error. Y al revés
       en el else. El compilador te guía para que no te equivoques.
     */
-    console.log(`Encontrados ${result.count} empleos:`)
+    /*
+      Bug nuestro: imprimía siempre "empleos".
+
+      Con una sola coincidencia salía "Encontrados 1 empleos", que
+      está mal escrito. Es un detalle, pero es justo el tipo de cosa
+      que el usuario ve en pantalla y que nadie revisa.
+    */
+    const sustantivo = result.count === 1 ? 'empleo' : 'empleos'
+    const verbo = result.count === 1 ? 'Encontrado' : 'Encontrados'
+
+    console.log(`${verbo} ${result.count} ${sustantivo}:`)
 
     // No hace falta tipar job: TypeScript sabe que result.jobs es Job[]
     result.jobs.forEach((job) => {

@@ -60,7 +60,14 @@ export function advancedSearch(jobs: Job[], options: SearchOptions): Job[] {
     results = filterByTechnology(results, options.technology)
   }
 
-  if (options.minSalary) {
+  /*
+    Otro bug nuestro: estaba escrito "if (options.minSalary)".
+
+    0 es FALSY. Con { minSalary: 0 } la condición daba false y el
+    filtro se saltaba entero, así que la función devolvía los empleos
+    SIN aplicar el salario mínimo.
+  */
+  if (options.minSalary !== undefined) {
     results = filterByMinSalary(results, options.minSalary)
   }
 

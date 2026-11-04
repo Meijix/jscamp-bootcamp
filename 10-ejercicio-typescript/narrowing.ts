@@ -69,6 +69,10 @@ export function formatSalary(salary: number | undefined): string {
     - Dentro del if: TypeScript sabe que es undefined
     - Después del if: sabe que es number, sin ninguna duda
 
+    OJO: ese narrowing existe solo para el compilador. Si el dato
+    viniera de una API sin validar, en tiempo de ejecución podría ser
+    cualquier cosa y el if no lo salvaría (por eso existe Zod).
+
     Por eso en la línea de abajo me deja llamar a .toLocaleString()
     sin quejarse. Si borrara este if, daría error: "el objeto puede
     ser undefined".
@@ -77,8 +81,18 @@ export function formatSalary(salary: number | undefined): string {
     return 'Salario no especificado'
   }
 
-  // toLocaleString pone los separadores de miles: 45000 -> "45.000"
-  return `€${salary.toLocaleString()}`
+  /*
+    toLocaleString pone los separadores de miles: 45000 -> "45.000".
+
+    Pero hay que decirle el idioma. Sin argumento usa el locale del
+    sistema donde corre, y en esta máquina es en-US:
+
+        formatSalary(45000)  ->  "€45,000"   // locale del sistema
+        formatSalary(45000)  ->  "€45.000"   // con 'es-ES'
+
+    El mismo código daba un resultado distinto según la máquina.
+  */
+  return `€${salary.toLocaleString('es-ES')}`
 }
 
 /**
