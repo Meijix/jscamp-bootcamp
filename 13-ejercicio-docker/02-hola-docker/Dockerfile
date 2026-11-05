@@ -5,6 +5,12 @@
 #
 #   docker build -t hola-docker .
 #   docker run --rm hola-docker
+#
+# OJO CON EL NOMBRE: este archivo se llamaba "dockerfile" (en
+# minúscula) y lo he renombrado a "Dockerfile". `docker build`
+# acepta la minúscula como fallback, pero `docker compose` NO
+# (distingue mayúsculas y diría que no encuentra el Dockerfile),
+# y la letra pide el nombre con mayúscula.
 # =========================================================
 
 # Alpine Linux a secas, sin Node ni nada más.
