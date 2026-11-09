@@ -30,6 +30,15 @@ inputs:
     required: false
     default: '11'
 
+  # La Tarea 7 pide llamar a esta action "sin caché" desde la matriz.
+  # Sin este input no habría manera de apagarla: el `cache: 'pnpm'` de
+  # setup-node está escrito aquí dentro y el caller no lo puede tocar.
+  # Es un input más para que la action siga siendo reutilizable.
+  cache:
+    description: 'Cachear el store de pnpm (false para desactivarla)'
+    required: false
+    default: 'true'
+
 runs:
   # "composite" = esta action es una lista de steps.
   # (Las otras opciones son 'node20' para actions escritas en
@@ -54,7 +63,14 @@ runs:
         # cache: 'pnpm' guarda la carpeta de paquetes descargados
         # entre ejecuciones. Es lo que hace que un CI tarde 30
         # segundos en vez de 3 minutos.
-        cache: 'pnpm'
+        #
+        # GitHub no tiene operador ternario: se imita con
+        # `condición && valor-si-true || valor-si-false`.
+        # Si el caller pidió caché se pasa 'pnpm'; si no, cadena vacía.
+        # actions/setup-node solo activa la caché cuando el valor NO
+        # está vacío, así que '' significa "sin caché".
+        cache: ${{ inputs.cache == 'true' && 'pnpm' || '' }}
+        # Ojo: este path solo se usa cuando la caché está activa.
         cache-dependency-path: 12-ejercicio-cicd/pnpm-lock.yaml
 
     - name: Install dependencies
@@ -62,6 +78,8 @@ runs:
       # "shell". En un workflow normal se puede omitir, pero aquí no:
       # si se olvida, el archivo ni siquiera se carga.
       shell: bash
+      # (Las actions que se invocan con "uses" no necesitan shell:
+      # no son scripts, son actions ya empaquetadas.)
 
       # working-directory porque el monorepo no está en la raíz del
       # repositorio, sino dentro de la carpeta del ejercicio.
